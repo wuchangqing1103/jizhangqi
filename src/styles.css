@@ -1386,3 +1386,156 @@ p {
     transition-duration: 0.01ms !important;
   }
 }
+/* ---------- backup panel ---------- */
+
+.menu-version {
+  padding: 0 10px 6px;
+  color: var(--muted);
+  font-size: 9.5px;
+  letter-spacing: 0.02em;
+}
+
+.backup-card {
+  width: 100%;
+  max-width: 360px;
+  max-height: min(78vh, 640px);
+  overflow-y: auto;
+  padding: 18px 18px 16px;
+  border-radius: 22px;
+  background: #fbf9f4;
+  box-shadow: 0 30px 70px -20px rgba(20, 18, 14, 0.5);
+  animation: dialog-in 0.2s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+
+.backup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.backup-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.backup-close {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: #efeae1;
+  color: var(--ink-3);
+}
+
+.backup-section + .backup-section {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.backup-section h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.backup-hint {
+  margin: 5px 0 10px;
+  color: var(--ink-3);
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+.backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.backup-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 11px;
+  background: #efeae1;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.backup-button:hover {
+  filter: brightness(0.97);
+}
+
+.backup-button.danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.backup-pick {
+  position: relative;
+}
+
+.backup-pick input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.backup-text {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink-3);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10.5px;
+  line-height: 1.5;
+  resize: none;
+}
+
+.backup-file {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.backup-preview {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(201, 106, 58, 0.08);
+}
+
+.backup-preview p {
+  margin-bottom: 8px;
+  color: var(--ink-2);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.backup-notice {
+  margin-top: 8px;
+  color: var(--green);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.backup-notice.error {
+  color: var(--danger);
+}

@@ -4,6 +4,7 @@ import type { RecordDraft, RecordItem, Tab } from './types'
 import { currentMonthKey, monthOf } from './lib/date'
 import { initialRecords, resetToSeed } from './lib/seed'
 import { writeLedger } from './lib/storage'
+import { BackupPanel } from './components/BackupPanel'
 import { BillPage } from './components/BillPage'
 import { BottomNav } from './components/BottomNav'
 import { ConfirmDialog } from './components/ConfirmDialog'
@@ -28,6 +29,7 @@ export default function App() {
   const [confirmRecord, setConfirmRecord] = useState<RecordItem | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [backupOpen, setBackupOpen] = useState(false)
   const [toast, setToast] = useState<{ id: number; message: string } | null>(null)
   const toastTimer = useRef<number | null>(null)
   const mainRef = useRef<HTMLElement>(null)
@@ -89,6 +91,16 @@ export default function App() {
     showToast('账本已清空')
   }
 
+  function handleImport(imported: RecordItem[]) {
+    // 整账本替换：不做按 id 合并，避免新旧数据混杂
+    setRecords(imported)
+    setBackupOpen(false)
+    setMonth(currentMonthKey())
+    setTab('bill')
+    setSheet(null)
+    showToast(`已导入 ${imported.length} 条记录`)
+  }
+
   function handleReset() {
     setRecords(resetToSeed())
     setMonth(currentMonthKey())
@@ -146,6 +158,22 @@ export default function App() {
               setMenuOpen(false)
               setConfirmClear(true)
             }}
+            onExport={() => {
+              setMenuOpen(false)
+              setBackupOpen(true)
+            }}
+            onImport={() => {
+              setMenuOpen(false)
+              setBackupOpen(true)
+            }}
+          />
+        )}
+
+        {backupOpen && (
+          <BackupPanel
+            records={records}
+            onClose={() => setBackupOpen(false)}
+            onImport={handleImport}
           />
         )}
 

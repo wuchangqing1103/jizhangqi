@@ -3,7 +3,7 @@ import { BarChart3 } from 'lucide-react'
 import type { RecordItem, RecordType } from '../types'
 import { findCategory } from '../data/categories'
 import { monthLabel } from '../lib/date'
-import { formatCents, splitCents } from '../lib/format'
+import { formatCents, formatPercent, splitCents } from '../lib/format'
 import { categoryBreakdown, monthRecords, summarize } from '../lib/stats'
 import { CategoryIcon } from './CategoryIcon'
 
@@ -104,7 +104,7 @@ export function StatsPage({ month, records }: StatsPageProps) {
                     <em>{item.count} 笔</em>
                   </span>
                   <span className="stats-value">¥{formatCents(item.amount)}</span>
-                  <span className="stats-percent">{Math.round(item.percent)}%</span>
+                  <span className="stats-percent">{formatPercent(item.percent)}</span>
                 </div>
                 <div className="stats-track">
                   <span

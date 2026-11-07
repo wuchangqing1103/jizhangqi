@@ -162,6 +162,17 @@ describe('记账器 App', () => {
     expect(screen.getByText(monthLabel(current))).toBeInTheDocument()
   })
 
+  it('切换页面时回到顶部', async () => {
+    const user = userEvent.setup()
+    renderWith([makeRecord()])
+
+    const main = document.querySelector('.app-main') as HTMLElement
+    main.scrollTop = 320
+    await user.click(screen.getByRole('button', { name: '统计' }))
+
+    expect(main.scrollTop).toBe(0)
+  })
+
   it('更多菜单可以清空账本并恢复示例数据', async () => {
     const user = userEvent.setup()
     renderWith([makeRecord()])

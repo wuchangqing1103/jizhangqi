@@ -988,14 +988,16 @@ p {
 .note-input {
   width: 100%;
   margin-top: 14px;
-  padding: 8px 2px;
-  border: 0;
-  border-bottom: 1px solid var(--line-strong);
-  background: transparent;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.6);
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: 13px;
   outline: none;
-  transition: border-color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .note-input::placeholder {
@@ -1003,7 +1005,8 @@ p {
 }
 
 .note-input:focus {
-  border-bottom-color: var(--ink);
+  border-color: var(--ink);
+  background: #fff;
 }
 
 .sheet-footer {
@@ -1315,13 +1318,30 @@ p {
   }
 
   .app-frame {
-    min-height: calc(100dvh - 36px);
+    height: calc(100dvh - 36px);
+    min-height: 0;
     border: 1px solid rgba(255, 255, 255, 0.75);
     border-radius: 34px;
     box-shadow:
       0 40px 90px -40px rgba(60, 50, 35, 0.4),
       0 0 0 1px rgba(30, 28, 24, 0.03);
     overflow: hidden;
+  }
+
+  .app-main {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(30, 28, 24, 0.18) transparent;
+  }
+
+  .app-main::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .app-main::-webkit-scrollbar-thumb {
+    background: rgba(30, 28, 24, 0.16);
+    border-radius: 999px;
   }
 
   .bottom-nav {

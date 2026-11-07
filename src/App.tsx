@@ -30,10 +30,16 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [toast, setToast] = useState<{ id: number; message: string } | null>(null)
   const toastTimer = useRef<number | null>(null)
+  const mainRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     writeLedger(records)
   }, [records])
+
+  // 切页面或切月份时回到顶部，避免沿用上一页的滚动位置
+  useEffect(() => {
+    if (mainRef.current) mainRef.current.scrollTop = 0
+  }, [tab, month])
 
   useEffect(() => {
     return () => {
@@ -117,7 +123,7 @@ export default function App() {
 
         <MonthSwitcher month={month} onChange={setMonth} />
 
-        <main className="app-main">
+        <main className="app-main" ref={mainRef}>
           {tab === 'bill' ? (
             <BillPage
               month={month}

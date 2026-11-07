@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   amountInputFromCents,
   formatCents,
+  formatPercent,
   parseAmountInput,
   splitCents,
 } from './format'
@@ -53,5 +54,18 @@ describe('amountInputFromCents', () => {
     expect(amountInputFromCents(1250)).toBe('12.5')
     expect(amountInputFromCents(1205)).toBe('12.05')
     expect(amountInputFromCents(1200)).toBe('12')
+  })
+})
+
+describe('formatPercent', () => {
+  it('四舍五入到整数百分比', () => {
+    expect(formatPercent(100)).toBe('100%')
+    expect(formatPercent(12.6)).toBe('13%')
+    expect(formatPercent(0)).toBe('0%')
+  })
+
+  it('非零但不足 1% 时不显示 0%', () => {
+    expect(formatPercent(0.28)).toBe('<1%')
+    expect(formatPercent(1)).toBe('1%')
   })
 })

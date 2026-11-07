@@ -24,6 +24,12 @@ export function parseAmountInput(text: string): number | null {
   return integer * 100 + fraction
 }
 
+/** 金额占比展示：非零但不足 1% 时显示 <1%，避免出现「0%」 */
+export function formatPercent(percent: number): string {
+  if (percent > 0 && percent < 1) return '<1%'
+  return `${Math.round(percent)}%`
+}
+
 /** 从已有记录回填到输入框，去掉多余的小数 0 */
 export function amountInputFromCents(cents: number): string {
   const abs = Math.abs(Math.round(cents))

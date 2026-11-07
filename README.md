@@ -22,7 +22,7 @@ npm run dev      # http://127.0.0.1:5173
 ## 质量检查
 
 ```bash
-npm test         # Vitest + Testing Library，共 32 个用例
+npm test         # Vitest + Testing Library，共 35 个用例
 npm run build    # tsc 类型检查 + 生产构建
 ```
 

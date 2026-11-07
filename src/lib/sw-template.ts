@@ -47,15 +47,20 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return
 
   if (request.mode === 'navigate') {
-    // 页面导航：先走网络拿最新版本，断网时回退到缓存的首页
+    // 页面导航：缓存优先，先瞬间出页面；同时后台把新版本拉回来，下次打开就是最新的
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const copy = response.clone()
-          caches.open(CACHE).then((cache) => cache.put(INDEX, copy))
-          return response
-        })
-        .catch(() => caches.match(request).then((hit) => hit || caches.match(INDEX))),
+      caches.match(INDEX).then((cached) => {
+        const network = fetch(request)
+          .then((response) => {
+            const copy = response.clone()
+            caches.open(CACHE).then((cache) => cache.put(INDEX, copy))
+            return response
+          })
+          .catch(() => undefined)
+
+        if (cached) return cached
+        return network.then((response) => response || caches.match(INDEX))
+      }),
     )
     return
   }

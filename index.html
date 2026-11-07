@@ -2,7 +2,10 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
     <meta name="theme-color" content="#f3f1ec" />
     <meta name="description" content="打开就能记，一个月后能看出钱花在哪。" />
     <link rel="manifest" href="manifest.json" />
@@ -11,9 +14,89 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="记账器" />
     <title>记账器</title>
+    <style>
+      /* 首屏骨架：JS 还在下载时先给出账本的形状，React 挂载后整块被替换 */
+      html,
+      body {
+        margin: 0;
+        background: #f3f1ec;
+        color: #1e1c18;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      #root {
+        min-height: 100dvh;
+      }
+
+      .boot {
+        max-width: 448px;
+        margin: 0 auto;
+        padding: 18px 20px 0;
+        animation: boot-fade 1.5s ease-in-out infinite;
+      }
+
+      .boot-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 30px;
+        margin-bottom: 16px;
+      }
+
+      .boot-mark {
+        width: 26px;
+        height: 26px;
+        border-radius: 9px;
+        background: #e2ddd2;
+      }
+
+      .boot-name {
+        width: 66px;
+        height: 12px;
+        border-radius: 6px;
+        background: #e2ddd2;
+      }
+
+      .boot-hero {
+        height: 128px;
+        border-radius: 26px;
+        background: #fbf9f4;
+        box-shadow: 0 1px 0 rgba(30, 28, 24, 0.03);
+      }
+
+      .boot-row {
+        height: 56px;
+        margin-top: 10px;
+        border-radius: 16px;
+        background: #fbf9f4;
+      }
+
+      @keyframes boot-fade {
+        50% {
+          opacity: 0.55;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .boot {
+          animation: none;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot" aria-hidden="true">
+        <div class="boot-head">
+          <span class="boot-mark"></span>
+          <span class="boot-name"></span>
+        </div>
+        <div class="boot-hero"></div>
+        <div class="boot-row"></div>
+        <div class="boot-row"></div>
+        <div class="boot-row"></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

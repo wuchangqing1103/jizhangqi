@@ -32,9 +32,15 @@ describe('buildServiceWorkerSource', () => {
     expect(source).toContain('if (url.origin !== self.location.origin) return')
   })
 
-  it('导航请求网络优先，失败回退缓存的首页', () => {
+  it('导航请求缓存优先，同时后台更新，断网也有页面', () => {
     expect(source).toContain("if (request.mode === 'navigate')")
+    expect(source).toContain('caches.match(INDEX).then((cached)')
+    expect(source).toContain('if (cached) return cached')
     expect(source).toContain('cache.put(INDEX, copy)')
-    expect(source).toContain('caches.match(INDEX)')
+    expect(source).toContain('return network.then((response) => response || caches.match(INDEX))')
+
+    // 缓存命中时不应该等网络：caches.match 的调用必须排在 fetch 之前
+    const navigate = source.slice(source.indexOf("if (request.mode === 'navigate')"))
+    expect(navigate.indexOf('caches.match(INDEX)')).toBeLessThan(navigate.indexOf('fetch(request)'))
   })
 })

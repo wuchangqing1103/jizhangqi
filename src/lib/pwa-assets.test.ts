@@ -22,6 +22,7 @@ interface Manifest {
 
 // 测试从仓库根目录跑（vitest root），直接读 public/ 下的静态文件
 const manifest = JSON.parse(readFileSync('public/manifest.json', 'utf8')) as Manifest
+const indexHtml = readFileSync('index.html', 'utf8')
 
 function readUInt32BE(bytes: Uint8Array, offset: number): number {
   return (
@@ -59,6 +60,24 @@ describe('PWA manifest', () => {
       { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
       { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
     ])
+  })
+})
+
+describe('PWA 入口页', () => {
+  it('禁用缩放，输入备注时界面不会被放大', () => {
+    expect(indexHtml).toContain('maximum-scale=1.0')
+    expect(indexHtml).toContain('user-scalable=no')
+    expect(indexHtml).toContain('viewport-fit=cover')
+  })
+
+  it('JS 未就绪时先渲染首屏骨架', () => {
+    expect(indexHtml).toContain('id="root"')
+    expect(indexHtml).toContain('class="boot"')
+  })
+
+  it('挂上 manifest 与主屏图标', () => {
+    expect(indexHtml).toContain('rel="manifest"')
+    expect(indexHtml).toContain('icons/apple-touch-icon.png')
   })
 })
 

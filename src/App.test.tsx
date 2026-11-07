@@ -36,6 +36,7 @@ describe('记账器 App', () => {
 
   afterEach(() => {
     localStorage.clear()
+    document.body.classList.remove('sheet-open')
   })
 
   it('从空账本记一笔，金额、分类、日期都正确落库', async () => {
@@ -130,7 +131,8 @@ describe('记账器 App', () => {
     ])
 
     await user.click(screen.getByRole('button', { name: '统计' }))
-    expect(screen.getByText('分类占比')).toBeInTheDocument()
+    // 统计页是懒加载的独立 chunk，等它挂上来
+    expect(await screen.findByText('分类占比')).toBeInTheDocument()
     expect(screen.getByText('¥12.50')).toBeInTheDocument()
     expect(screen.getByText('¥6')).toBeInTheDocument()
     expect(screen.getByText('2 笔')).toBeInTheDocument()
@@ -173,7 +175,23 @@ describe('记账器 App', () => {
     expect(main.scrollTop).toBe(0)
   })
 
-  it('更多菜单可以清空账本并恢复示例数据', async () => {
+  it('更多菜单只有备份和清空两项，底部显示版本号', async () => {
+    const user = userEvent.setup()
+    renderWith([makeRecord()])
+
+    await user.click(screen.getByRole('button', { name: '更多操作' }))
+    const menu = screen.getByRole('menu')
+
+    expect(
+      within(menu)
+        .getAllByRole('menuitem')
+        .map((item) => item.textContent?.trim()),
+    ).toEqual(['导出/导入备份', '清空所有记录'])
+    expect(within(menu).queryByRole('menuitem', { name: '重置示例账单' })).not.toBeInTheDocument()
+    expect(within(menu).getByText(/^(v\d+\.\d+\.\d+|dev)$/)).toBeInTheDocument()
+  })
+
+  it('清空账本需要二次确认', async () => {
     const user = userEvent.setup()
     renderWith([makeRecord()])
 
@@ -183,13 +201,20 @@ describe('记账器 App', () => {
     const alert = screen.getByRole('alertdialog')
     expect(within(alert).getByText('清空整个账本？')).toBeInTheDocument()
     await user.click(within(alert).getByRole('button', { name: '清空' }))
+
     expect(screen.getByText('这个月还没有记录')).toBeInTheDocument()
     expect(storedRecords()).toEqual([])
-
-    await user.click(screen.getByRole('button', { name: '更多操作' }))
-    await user.click(screen.getByRole('menuitem', { name: '重置示例账单' }))
-    expect(screen.queryByText('这个月还没有记录')).not.toBeInTheDocument()
-    expect(storedRecords().length).toBeGreaterThan(0)
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+  })
+
+  it('记账面板打开时锁住页面滚动，关闭后解锁', async () => {
+    const user = userEvent.setup()
+    renderWith([])
+
+    await user.click(screen.getByRole('button', { name: '记一笔' }))
+    expect(document.body).toHaveClass('sheet-open')
+
+    await user.click(screen.getByRole('button', { name: '关闭记账面板' }))
+    expect(document.body).not.toHaveClass('sheet-open')
   })
 })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { APP_VERSION, BUILD_TIME, buildLabel, formatBuildTime } from './build-info'
+import { APP_VERSION, BUILD_TIME, buildLabel } from './build-info'
 
 describe('build info', () => {
   it('版本号非空，且不是未替换的占位符', () => {
@@ -12,16 +12,15 @@ describe('build info', () => {
     expect(Number.isNaN(Date.parse(BUILD_TIME))).toBe(false)
   })
 
-  it('没有构建时间时回退，不显示空标签', () => {
-    expect(formatBuildTime('')).toBe('')
-    expect(formatBuildTime('not-a-date')).toBe('')
-    expect(buildLabel('dev', '')).toBe('dev')
-    expect(buildLabel('0.1.0', '')).toBe('v0.1.0')
+  it('菜单标签只显示版本号，不带日期时间', () => {
+    expect(buildLabel('0.1.1')).toBe('v0.1.1')
+    expect(buildLabel('0.1.1')).not.toContain('·')
+    expect(buildLabel('dev')).toBe('dev')
   })
 
-  it('把 ISO 时间格式化成菜单里的本地时间', () => {
-    const iso = new Date(2026, 10, 7, 16, 50).toISOString()
-    expect(formatBuildTime(iso)).toBe('2026-11-07 16:50')
-    expect(buildLabel('0.1.0', iso)).toBe('v0.1.0 · 2026-11-07 16:50')
+  it('菜单标签用的是打包进来的版本号', () => {
+    const label = buildLabel()
+    expect(label === 'dev' || label === `v${APP_VERSION}`).toBe(true)
+    expect(label).not.toContain('·')
   })
 })

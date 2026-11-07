@@ -1,18 +1,24 @@
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 import { MoreHorizontal, Wallet } from 'lucide-react'
 import type { RecordDraft, RecordItem, Tab } from './types'
 import { currentMonthKey, monthOf } from './lib/date'
-import { initialRecords, resetToSeed } from './lib/seed'
+import { initialRecords } from './lib/seed'
 import { writeLedger } from './lib/storage'
-import { BackupPanel } from './components/BackupPanel'
 import { BillPage } from './components/BillPage'
 import { BottomNav } from './components/BottomNav'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { EntrySheet } from './components/EntrySheet'
 import { MonthSwitcher } from './components/MonthSwitcher'
 import { MoreMenu } from './components/MoreMenu'
-import { StatsPage } from './components/StatsPage'
 import { Toast } from './components/Toast'
+
+// 统计页和备份面板不是首屏必需，拆成独立 chunk，先把账单页放出来
+const StatsPage = lazy(() =>
+  import('./components/StatsPage').then((module) => ({ default: module.StatsPage })),
+)
+const BackupPanel = lazy(() =>
+  import('./components/BackupPanel').then((module) => ({ default: module.BackupPanel })),
+)
 
 function createId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -37,6 +43,12 @@ export default function App() {
   useEffect(() => {
     writeLedger(records)
   }, [records])
+
+  // 记账面板打开时锁住页面滚动，避免背景跟着一起动、也不让页面被键盘顶起来
+  useEffect(() => {
+    document.body.classList.toggle('sheet-open', sheet !== null)
+    return () => document.body.classList.remove('sheet-open')
+  }, [sheet])
 
   // 切页面或切月份时回到顶部，避免沿用上一页的滚动位置
   useEffect(() => {
@@ -101,15 +113,6 @@ export default function App() {
     showToast(`已导入 ${imported.length} 条记录`)
   }
 
-  function handleReset() {
-    setRecords(resetToSeed())
-    setMonth(currentMonthKey())
-    setTab('bill')
-    setMenuOpen(false)
-    setSheet(null)
-    showToast('示例账单已恢复')
-  }
-
   return (
     <div className="app-shell">
       <div className="app-frame">
@@ -136,16 +139,18 @@ export default function App() {
         <MonthSwitcher month={month} onChange={setMonth} />
 
         <main className="app-main" ref={mainRef}>
-          {tab === 'bill' ? (
-            <BillPage
-              month={month}
-              records={records}
-              onEdit={(record) => setSheet({ record })}
-              onAdd={openNewEntry}
-            />
-          ) : (
-            <StatsPage month={month} records={records} />
-          )}
+          <Suspense fallback={<div className="page-loading" aria-hidden="true" />}>
+            {tab === 'bill' ? (
+              <BillPage
+                month={month}
+                records={records}
+                onEdit={(record) => setSheet({ record })}
+                onAdd={openNewEntry}
+              />
+            ) : (
+              <StatsPage month={month} records={records} />
+            )}
+          </Suspense>
         </main>
 
         <BottomNav tab={tab} onChange={setTab} onAdd={openNewEntry} />
@@ -153,28 +158,25 @@ export default function App() {
         {menuOpen && (
           <MoreMenu
             onClose={() => setMenuOpen(false)}
-            onReset={handleReset}
+            onBackup={() => {
+              setMenuOpen(false)
+              setBackupOpen(true)
+            }}
             onClear={() => {
               setMenuOpen(false)
               setConfirmClear(true)
-            }}
-            onExport={() => {
-              setMenuOpen(false)
-              setBackupOpen(true)
-            }}
-            onImport={() => {
-              setMenuOpen(false)
-              setBackupOpen(true)
             }}
           />
         )}
 
         {backupOpen && (
-          <BackupPanel
-            records={records}
-            onClose={() => setBackupOpen(false)}
-            onImport={handleImport}
-          />
+          <Suspense fallback={null}>
+            <BackupPanel
+              records={records}
+              onClose={() => setBackupOpen(false)}
+              onImport={handleImport}
+            />
+          </Suspense>
         )}
 
         {sheet && (

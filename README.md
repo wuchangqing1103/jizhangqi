@@ -2,6 +2,16 @@
 
 单用户轻量记账的纯前端演示，用于确认界面与操作流程。所有数据都是本地模拟，只保存在浏览器 `localStorage`，不会上传到任何服务器。
 
+## 界面预览
+
+| 账单流 | 记一笔 | 月度统计 |
+| --- | --- | --- |
+| ![账单流](docs/screenshots/bill.png) | ![记一笔](docs/screenshots/entry.png) | ![月度统计](docs/screenshots/stats.png) |
+
+手机宽度（390 × 844）下的账单页：
+
+![手机宽度账单页](docs/screenshots/mobile.png)
+
 ## 本地运行
 
 ```bash

@@ -215,7 +215,15 @@ describe('账单页：左滑与长按删除', () => {
     expect(styles).toMatch(/\.record-delete\s*\{[^}]*linear-gradient/)
     // 行吸附/回弹与图标淡入淡出都走 iOS 缓动
     expect(styles).toMatch(/\.record-swipe\s*\{[^}]*transform 0\.3s cubic-bezier\(0\.32, 0\.72, 0, 1\)/)
+    expect(styles).toMatch(/\.record-swipe\s*\{[^}]*overflow:\s*hidden/)
     expect(styles).toMatch(/\.record-swipe\s*\{[^}]*will-change:\s*transform/)
+    // 滑开时整行垫一层更深的凹槽底色，记录卡片和胶囊才有层次
+    expect(styles).toMatch(/\.record-item\.is-swiped\s*\{[^}]*background:\s*#e7dfd0/)
+    // 触屏上不能给 :hover 底色，否则滑开的行看起来像「被选中」
+    const hoverGate = styles.indexOf('@media (hover: hover)')
+    expect(hoverGate).toBeGreaterThan(-1)
+    expect(styles.indexOf('.record-row:hover')).toBeGreaterThan(hoverGate)
+    expect(styles.indexOf('.record-row:active')).toBeGreaterThan(hoverGate)
     expect(styles).toMatch(/\.record-delete-inner\s*\{[^}]*opacity 0\.2s cubic-bezier\(0\.32, 0\.72, 0, 1\)/)
   })
 })

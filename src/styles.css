@@ -403,12 +403,14 @@ p {
 .record-item {
   position: relative;
   overflow: hidden;
+  transition: background 0.18s ease;
 }
 
 .record-swipe {
   position: relative;
   z-index: 1;
   display: flex;
+  overflow: hidden;
   background: var(--card);
   will-change: transform;
   transition:
@@ -416,11 +418,16 @@ p {
     border-radius 0.18s ease;
 }
 
+/* 滑开时整行是一块略深的「凹槽」，记录卡片和红色胶囊都浮在它上面 */
+.record-item.is-swiped {
+  background: #e7dfd0;
+}
+
 /* 滑开时记录自己也是一张圆角卡片，和右边的删除胶囊同款圆角、留 8px 白缝 */
 .record-item.is-swiped .record-swipe {
   border-top-right-radius: 16px;
   border-bottom-right-radius: 16px;
-  box-shadow: 0 2px 10px -6px rgba(60, 40, 20, 0.45);
+  box-shadow: 0 4px 12px -8px rgba(58, 38, 18, 0.6);
 }
 
 /* 删除位：独立圆角胶囊，四周留白，不和记录贴在一起 */
@@ -481,12 +488,15 @@ p {
   transition: background 0.15s ease;
 }
 
-.record-row:hover {
-  background: #faf8f4;
-}
+/* 只在真有 hover 的设备上给底色：触屏上 :hover 会粘住，让滑开的行看起来像被选中 */
+@media (hover: hover) and (pointer: fine) {
+  .record-row:hover {
+    background: #faf8f4;
+  }
 
-.record-row:active {
-  background: #f6f2eb;
+  .record-row:active {
+    background: #f6f2eb;
+  }
 }
 
 .cat-icon {

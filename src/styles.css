@@ -843,10 +843,8 @@ p {
   /* 毛玻璃与淡入都会让 iOS 单独重绘顶部安全区，闪一下；遮罩直接出现，动画交给面板本身 */
 }
 
-/* 退场：淡出，但遮罩继续拦截点击，避免 240ms 里误点到下面的按钮 */
-.sheet-backdrop.is-closing {
-  animation: fade-out 0.2s cubic-bezier(0.4, 0, 1, 1) both;
-}
+/* 退场时遮罩保持不透明、跟着面板一起卸载：全屏层的任何淡出都是透明度动画，
+   iOS 会让顶部安全区慢一帧——这就是「点加号再返回、最顶上那条闪一下」的来源 */
 
 .entry-sheet {
   position: fixed;
@@ -1956,10 +1954,6 @@ body.modal-open {
   z-index: 60;
   background: rgba(24, 22, 18, 0.2);
   /* 同样不做淡入：全屏层一淡入，顶部安全区就慢一帧 */
-}
-
-.composer-layer.is-closing {
-  animation: fade-out 0.18s cubic-bezier(0.4, 0, 1, 1) both;
 }
 
 .composer-card {

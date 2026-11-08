@@ -102,9 +102,9 @@ describe('记账面板：结构、分类与聚焦', () => {
     expect(styles).toMatch(/@keyframes sheet-up\s*\{[^}]*from\s*\{[^}]*translate\(-50%,\s*100%\)/)
     expect(styles).not.toMatch(/30%\s*\{[^}]*10\.4%/)
 
-    // 退场：面板 0.24s 滑下去、遮罩 0.2s 淡出，动画结束才卸载
+    // 退场：面板 0.24s 滑下去，遮罩不淡出、跟着一起卸载（淡出会让顶部安全区闪）
     expect(styles).toMatch(/\.entry-sheet\.is-closing\s*\{[^}]*animation:\s*sheet-down 0\.24s/)
-    expect(styles).toMatch(/\.sheet-backdrop\.is-closing\s*\{[^}]*fade-out 0\.2s/)
+    expect(styles).not.toMatch(/\.sheet-backdrop\.is-closing\s*\{[^}]*fade-out/)
     // 进场时遮罩不做淡入、不带毛玻璃：全屏层一参与合成，iOS 顶部安全区就慢一帧
     expect(styles).not.toMatch(/\.sheet-backdrop\s*\{[^}]*fade-in/)
     expect(styles).not.toMatch(/\.sheet-backdrop\s*\{[^}]*backdrop-filter/)

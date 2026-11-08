@@ -198,7 +198,7 @@ export function EntrySheet({ record, onClose, onSubmit, onRequestDelete }: Entry
                 onClick={() => setCategory(option.id)}
               >
                 <span className="cat-icon" style={{ '--cat': option.color } as CSSProperties}>
-                  <CategoryIcon id={option.id} size={17} />
+                  <CategoryIcon id={option.id} size={16} />
                 </span>
                 <span>{option.name}</span>
               </button>
@@ -213,6 +213,10 @@ export function EntrySheet({ record, onClose, onSubmit, onRequestDelete }: Entry
             placeholder="添加备注（选填）"
             aria-label="备注"
             onChange={(event) => setNote(event.target.value)}
+            onFocus={(event) => {
+              // 键盘弹起时只让 .sheet-body 内部滚到输入框，别把整页顶起来（jsdom 无此 API）
+              event.currentTarget.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
+            }}
           />
         </div>
 

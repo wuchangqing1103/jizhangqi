@@ -1,0 +1,73 @@
+import { readFileSync } from 'node:fs'
+import { describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { EntrySheet } from './EntrySheet'
+
+const styles = readFileSync('src/styles.css', 'utf8')
+
+function renderSheet() {
+  const onClose = vi.fn()
+  const onSubmit = vi.fn()
+  const onRequestDelete = vi.fn()
+  render(
+    <EntrySheet record={null} onClose={onClose} onSubmit={onSubmit} onRequestDelete={onRequestDelete} />,
+  )
+  const sheet = screen.getByRole('dialog', { name: '记一笔' })
+  return { sheet, onClose, onSubmit, onRequestDelete }
+}
+
+describe('记账面板：结构、分类与聚焦', () => {
+  it('保存键在固定 footer 里，footer 与 body 都是面板的直接子元素', () => {
+    const { sheet } = renderSheet()
+    const footer = sheet.querySelector('.sheet-footer') as HTMLElement
+    const body = sheet.querySelector('.sheet-body') as HTMLElement
+
+    expect(footer.parentElement).toBe(sheet)
+    expect(body.parentElement).toBe(sheet)
+    expect(within(footer).getByRole('button', { name: '保存' })).toBeInTheDocument()
+    // body 在 footer 之前，滚动只发生在中间区
+    expect(body.compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('支出 9 个分类全部露出，收入 5 个，没有「更多」', async () => {
+    const user = userEvent.setup()
+    renderSheet()
+
+    const expenseGroup = screen.getByRole('group', { name: '选择分类' })
+    expect(within(expenseGroup).getAllByRole('button')).toHaveLength(9)
+    expect(within(expenseGroup).queryByRole('button', { name: /更多/ })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '收入' }))
+    const incomeGroup = screen.getByRole('group', { name: '选择分类' })
+    expect(within(incomeGroup).getAllByRole('button')).toHaveLength(5)
+  })
+
+  it('备注聚焦时只滚 body：jsdom 无 scrollIntoView 不报错，有则按 block:center 调用', () => {
+    renderSheet()
+    const note = screen.getByLabelText('备注')
+
+    expect(() => fireEvent.focus(note)).not.toThrow()
+
+    const scrollIntoView = vi.fn()
+    note.scrollIntoView = scrollIntoView
+    fireEvent.focus(note)
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'center', behavior: 'smooth' })
+  })
+
+  it('CSS 契约：三段式 flex、分类 5 列、键盘/保存键压矮、动画 30% 走完 90% 行程', () => {
+    expect(styles).toMatch(/\.entry-sheet\s*\{[^}]*display:\s*flex/)
+    expect(styles).toMatch(/\.entry-sheet\s*\{[^}]*max-height:\s*92dvh/)
+    expect(styles).toMatch(/\.entry-sheet\s*\{[^}]*overflow:\s*hidden/)
+    expect(styles).toMatch(/\.sheet-body\s*\{[^}]*min-height:\s*0/)
+    expect(styles).toMatch(/\.category-grid\s*\{[^}]*repeat\(5,\s*1fr\)/)
+    expect(styles).toMatch(/\.category-option \.cat-icon\s*\{[^}]*width:\s*26px/)
+    expect(styles).toMatch(/\.key\s*\{[^}]*height:\s*40px/)
+    expect(styles).toMatch(/\.save-button\s*\{[^}]*height:\s*44px/)
+
+    // 用户指定：前 30% 走完 90% 行程，剩下 0.56 秒只走最后 10%
+    expect(styles).toMatch(/animation:\s*sheet-up 0\.8s both/)
+    expect(styles).toMatch(/30%\s*\{[^}]*translate\(-50%,\s*10\.4%\)/)
+    expect(styles).toMatch(/0%\s*\{[^}]*translate\(-50%,\s*104%\)/)
+  })
+})

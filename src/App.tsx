@@ -146,6 +146,7 @@ export default function App() {
                 records={records}
                 onEdit={(record) => setSheet({ record })}
                 onAdd={openNewEntry}
+                onRequestDelete={setConfirmRecord}
               />
             ) : (
               <StatsPage month={month} records={records} />

@@ -231,11 +231,6 @@ p {
   color: var(--ink-2);
 }
 
-.list-heading > span {
-  font-size: 10.5px;
-  color: var(--muted);
-}
-
 /* ---------- summary card ---------- */
 
 .summary-card {
@@ -390,19 +385,6 @@ p {
   color: var(--muted);
 }
 
-.day-totals {
-  display: flex;
-  gap: 9px;
-  flex-shrink: 0;
-  font-size: 10px;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-
-.day-totals .income {
-  color: var(--green);
-}
-
 .record-list {
   margin: 0;
   padding: 0;
@@ -417,13 +399,49 @@ p {
   border-top: 1px solid rgba(30, 28, 24, 0.055);
 }
 
+/* 左滑删除：li 负责裁切，swipe 层不透明地盖住底下的删除按钮 */
+.record-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.record-swipe {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  background: var(--card);
+  transition: transform 0.18s ease;
+}
+
+.record-delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  display: grid;
+  place-items: center;
+  width: 84px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
 .record-row {
   display: flex;
   align-items: center;
+  flex: 1 1 auto;
   gap: 12px;
   width: 100%;
+  min-width: 0;
   padding: 12px 14px;
   text-align: left;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
   transition: background 0.15s ease;
 }
 
@@ -781,22 +799,25 @@ p {
   bottom: 0;
   left: 50%;
   z-index: 40;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 448px;
-  max-height: 94dvh;
+  max-height: 92vh;
+  max-height: 92dvh;
   padding: 8px 20px calc(14px + env(safe-area-inset-bottom));
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  overflow: hidden;
   border-radius: 28px 28px 0 0;
   background: #fbf9f4;
   box-shadow: 0 -22px 60px -18px rgba(30, 28, 24, 0.35);
   transform: translateX(-50%);
-  /* 0.75 秒里前 1/3 走完大部分行程：出来得快，落地又不硬 */
-  animation: sheet-up 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* 0.8 秒：前 30%（0.24s）走完 90% 行程，剩下 0.56 秒只走最后 10%，缓慢贴合 */
+  animation: sheet-up 0.8s both;
   will-change: transform;
 }
 
 .sheet-grabber {
+  flex: 0 0 auto;
   width: 36px;
   height: 4px;
   margin: 0 auto 10px;
@@ -805,6 +826,7 @@ p {
 }
 
 .sheet-header {
+  flex: 0 0 auto;
   display: grid;
   grid-template-columns: 64px 1fr 64px;
   align-items: center;
@@ -840,7 +862,11 @@ p {
 }
 
 .sheet-body {
+  flex: 1 1 auto;
+  min-height: 0;
   padding-top: 2px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .date-row {
@@ -949,28 +975,28 @@ p {
 
 .category-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
 }
 
 .category-option {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 9px 4px 8px;
+  gap: 4px;
+  padding: 7px 2px 6px;
   border: 1px solid transparent;
-  border-radius: 14px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.55);
   color: #5f5a51;
-  font-size: 11px;
+  font-size: 10.5px;
   transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .category-option .cat-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
 }
 
 .category-option.selected {
@@ -1013,7 +1039,11 @@ p {
 }
 
 .sheet-footer {
-  margin-top: 14px;
+  flex: 0 0 auto;
+  margin: 0 -20px;
+  padding: 10px 20px 0;
+  border-top: 1px solid var(--line);
+  background: #fbf9f4;
 }
 
 .keypad {
@@ -1023,7 +1053,7 @@ p {
 }
 
 .key {
-  height: 42px;
+  height: 40px;
   border-radius: 12px;
   background: #f2eee7;
   color: var(--ink-2);
@@ -1050,7 +1080,7 @@ p {
 
 .save-button {
   width: 100%;
-  height: 46px;
+  height: 44px;
   margin-top: 10px;
   border-radius: 14px;
   background: var(--ink);
@@ -1214,8 +1244,8 @@ p {
 /* ---------- toast ---------- */
 
 .toast {
-  position: absolute;
-  bottom: calc(94px + env(safe-area-inset-bottom));
+  position: fixed;
+  bottom: calc(104px + env(safe-area-inset-bottom));
   left: 50%;
   z-index: 45;
   display: flex;
@@ -1260,15 +1290,17 @@ p {
 
 @keyframes sheet-up {
   0% {
-    opacity: 0.65;
+    opacity: 0.7;
     transform: translate(-50%, 104%);
+    animation-timing-function: cubic-bezier(0.18, 0.86, 0.24, 1);
   }
-  33% {
+  30% {
     opacity: 1;
-    transform: translate(-50%, -1.4%);
+    transform: translate(-50%, 10.4%);
+    animation-timing-function: cubic-bezier(0.33, 0, 0.25, 1);
   }
-  60% {
-    transform: translate(-50%, 0.4%);
+  62% {
+    transform: translate(-50%, 3%);
   }
   100% {
     transform: translate(-50%, 0);
@@ -1367,11 +1399,10 @@ p {
     bottom: 18px;
     border-radius: 28px;
     max-height: calc(100dvh - 36px);
-    overflow-y: auto;
   }
 
   .toast {
-    bottom: 92px;
+    bottom: 100px;
   }
 
   .keyboard-hint {

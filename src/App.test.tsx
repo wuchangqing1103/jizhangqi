@@ -1,5 +1,6 @@
+import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
 import type { RecordItem } from './types'
@@ -216,5 +217,32 @@ describe('记账器 App', () => {
 
     await user.click(screen.getByRole('button', { name: '关闭记账面板' }))
     expect(document.body).not.toHaveClass('sheet-open')
+  })
+
+  it('左滑删除：二次确认后记录消失、提示出现在固定位置', async () => {
+    const user = userEvent.setup()
+    renderWith([makeRecord()])
+
+    const row = screen.getByRole('button', { name: '编辑 餐饮 午饭' })
+    fireEvent.pointerDown(row, { pointerId: 1, pointerType: 'touch', clientX: 240, clientY: 300 })
+    fireEvent.pointerMove(row, { pointerId: 1, pointerType: 'touch', clientX: 150, clientY: 300 })
+    fireEvent.pointerUp(row, { pointerId: 1, pointerType: 'touch', clientX: 150, clientY: 300 })
+
+    await user.click(screen.getByRole('button', { name: '删除 餐饮 午饭' }))
+    const alert = screen.getByRole('alertdialog')
+    expect(within(alert).getByText('删除这笔记录？')).toBeInTheDocument()
+    await user.click(within(alert).getByRole('button', { name: '删除' }))
+
+    expect(screen.getByText('已删除记录').closest('.toast')).not.toBeNull()
+    expect(screen.getByText('这个月还没有记录')).toBeInTheDocument()
+    expect(storedRecords()).toEqual([])
+  })
+
+  it('提示固定在＋号上方（读 styles.css 的 CSS 契约）', () => {
+    const css = readFileSync('src/styles.css', 'utf8')
+    expect(css).toMatch(/\.toast\s*\{[^}]*position:\s*fixed/)
+    expect(css).toMatch(
+      /\.toast\s*\{[^}]*bottom:\s*calc\(104px \+ env\(safe-area-inset-bottom\)\)/,
+    )
   })
 })

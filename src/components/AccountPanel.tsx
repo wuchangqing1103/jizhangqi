@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import type { Account } from '../types'
 import { MAX_ACCOUNT_NAME } from '../lib/accounts'
+import { modalClass, useModalClose } from '../lib/useModalClose'
 
 interface AccountPanelProps {
   accounts: Account[]
@@ -25,17 +26,18 @@ export function AccountPanel({
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const { closing, close } = useModalClose(onClose)
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault()
-        onClose()
+        close()
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [onClose])
+  }, [close])
 
   function handleCreate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -66,17 +68,16 @@ export function AccountPanel({
   }
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className={modalClass('modal-backdrop', closing)}>
       <div
-        className="account-card"
+        className={modalClass('account-card', closing)}
         role="dialog"
         aria-modal="true"
         aria-label="管理账本"
-        onClick={(event) => event.stopPropagation()}
       >
         <header className="backup-header">
           <h2>管理账本</h2>
-          <button type="button" className="backup-close" aria-label="关闭账本管理" onClick={onClose}>
+          <button type="button" className="backup-close" aria-label="关闭账本管理" onClick={close}>
             <X size={16} strokeWidth={2} aria-hidden="true" />
           </button>
         </header>

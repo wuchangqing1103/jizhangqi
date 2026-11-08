@@ -74,6 +74,15 @@ export default function App() {
     return () => document.body.classList.remove('sheet-open')
   }, [sheet])
 
+  // 任一模态弹层（确认框 / 备份 / 账本管理）打开时也锁住背景，点击与滚动都不下漏
+  const modalOpen =
+    confirmRecord !== null || confirmAccount !== null || confirmClear || backupOpen || accountsOpen
+
+  useEffect(() => {
+    document.body.classList.toggle('modal-open', modalOpen)
+    return () => document.body.classList.remove('modal-open')
+  }, [modalOpen])
+
   // 切页面或切月份时回到顶部，避免沿用上一页的滚动位置
   useEffect(() => {
     if (mainRef.current) mainRef.current.scrollTop = 0

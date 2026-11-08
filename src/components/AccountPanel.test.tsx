@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AccountPanel } from './AccountPanel'
 import { PRESET_ACCOUNTS } from '../lib/storage'
@@ -83,14 +83,26 @@ describe('AccountPanel：账本管理', () => {
     expect(screen.getByRole('button', { name: `删除 ${PRESET_ACCOUNTS[0].name}` })).toBeDisabled()
   })
 
-  it('关闭按钮与 Esc 都会通知关闭', async () => {
+  it('关闭按钮走退场，200ms 后才通知关闭，连点只关一次', async () => {
     const user = userEvent.setup()
     const { onClose } = setup()
 
     await user.click(screen.getByRole('button', { name: '关闭账本管理' }))
-    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(document.querySelector('.modal-backdrop')).toHaveClass('is-closing')
+    expect(onClose).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: '关闭账本管理' }))
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
+  })
+
+  it('Esc 也会关闭，点侵入背景的空白不会', async () => {
+    const user = userEvent.setup()
+    const { onClose } = setup()
+
+    fireEvent.click(document.querySelector('.modal-backdrop') as HTMLElement)
+    expect(onClose).not.toHaveBeenCalled()
 
     await user.keyboard('{Escape}')
-    expect(onClose).toHaveBeenCalledTimes(2)
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
   })
 })

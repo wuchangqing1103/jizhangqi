@@ -3,6 +3,7 @@ import type { ChangeEvent } from 'react'
 import { Copy, Download, Upload, X } from 'lucide-react'
 import type { Account, RecordItem } from '../types'
 import { backupFileName, buildBackup, parseBackup } from '../lib/backup'
+import { modalClass, useModalClose } from '../lib/useModalClose'
 
 interface BackupPanelProps {
   accounts: Account[]
@@ -38,6 +39,7 @@ export function BackupPanel({ accounts, records, onClose, onImport }: BackupPane
   const [now] = useState(() => new Date())
   const [notice, setNotice] = useState<Notice | null>(null)
   const [pending, setPending] = useState<Pending | null>(null)
+  const { closing, close } = useModalClose(onClose)
   const fileName = backupFileName(now)
   const backupText = useMemo(
     () => JSON.stringify(buildBackup({ accounts, records }, now), null, 2),
@@ -107,17 +109,16 @@ export function BackupPanel({ accounts, records, onClose, onImport }: BackupPane
   }
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className={modalClass('modal-backdrop', closing)}>
       <div
-        className="backup-card"
+        className={modalClass('backup-card', closing)}
         role="dialog"
         aria-modal="true"
         aria-label="备份与恢复"
-        onClick={(event) => event.stopPropagation()}
       >
         <header className="backup-header">
           <h2>备份与恢复</h2>
-          <button type="button" className="backup-close" aria-label="关闭" onClick={onClose}>
+          <button type="button" className="backup-close" aria-label="关闭" onClick={close}>
             <X size={16} strokeWidth={2} aria-hidden="true" />
           </button>
         </header>

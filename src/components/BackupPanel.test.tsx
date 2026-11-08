@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { RecordItem } from '../types'
 import { buildBackup } from '../lib/backup'
@@ -98,13 +98,15 @@ describe('BackupPanel', () => {
     expect(onImport).not.toHaveBeenCalled()
   })
 
-  it('关掉面板不导入任何东西', async () => {
+  it('关掉面板不导入任何东西，退场动画之后才通知关闭', async () => {
     const user = userEvent.setup()
     const { onImport, onClose } = setup()
 
     await user.click(screen.getByRole('button', { name: '关闭' }))
+    expect(document.querySelector('.modal-backdrop')).toHaveClass('is-closing')
+    expect(onClose).not.toHaveBeenCalled()
 
-    expect(onClose).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
     expect(onImport).not.toHaveBeenCalled()
   })
 })

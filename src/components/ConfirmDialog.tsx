@@ -1,4 +1,5 @@
 import { Trash2 } from 'lucide-react'
+import { modalClass, useModalClose } from '../lib/useModalClose'
 
 interface ConfirmDialogProps {
   title: string
@@ -15,15 +16,16 @@ export function ConfirmDialog({
   onCancel,
   onConfirm,
 }: ConfirmDialogProps) {
+  const { closing, close } = useModalClose(onCancel)
+
   return (
-    <div className="modal-backdrop" onClick={onCancel}>
+    <div className={modalClass('modal-backdrop', closing)}>
       <div
-        className="confirm-card"
+        className={modalClass('confirm-card', closing)}
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="confirm-title"
         aria-describedby="confirm-message"
-        onClick={(event) => event.stopPropagation()}
       >
         <div className="confirm-icon">
           <Trash2 size={20} strokeWidth={1.8} aria-hidden="true" />
@@ -31,7 +33,7 @@ export function ConfirmDialog({
         <h3 id="confirm-title">{title}</h3>
         <p id="confirm-message">{message}</p>
         <div className="confirm-actions">
-          <button type="button" onClick={onCancel}>
+          <button type="button" onClick={close}>
             取消
           </button>
           <button type="button" className="danger" onClick={onConfirm}>

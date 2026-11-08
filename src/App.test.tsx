@@ -59,6 +59,7 @@ describe('记账器 App', () => {
   afterEach(() => {
     localStorage.clear()
     document.body.classList.remove('sheet-open')
+    document.body.classList.remove('modal-open')
   })
 
   it('从空账本记一笔，金额、分类、日期都正确落库', async () => {
@@ -132,7 +133,8 @@ describe('记账器 App', () => {
     let alert = screen.getByRole('alertdialog')
     expect(within(alert).getByText('删除这笔记录？')).toBeInTheDocument()
     await user.click(within(alert).getByRole('button', { name: '取消' }))
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    // 取消同样先播 200ms 退场，播完才卸载
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
     expect(storedRecords()).toHaveLength(1)
 
     await user.click(within(dialog).getByRole('button', { name: '删除' }))
@@ -340,6 +342,23 @@ describe('记账器 App', () => {
 
     expect(screen.getByRole('button', { name: '出行' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '旅行' })).not.toBeInTheDocument()
+  })
+
+  it('弹层打开时锁住背景，点空白不会关闭，只有 × 才关闭', async () => {
+    const user = userEvent.setup()
+    renderWith([])
+
+    await user.click(screen.getByRole('button', { name: '管理账本' }))
+    expect(screen.getByRole('dialog', { name: '管理账本' })).toBeInTheDocument()
+    expect(document.body).toHaveClass('modal-open')
+
+    fireEvent.click(document.querySelector('.modal-backdrop') as HTMLElement)
+    expect(screen.getByRole('dialog', { name: '管理账本' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '关闭账本管理' }))
+    // 退场动画 200ms 之后才卸载，背景锁也同时解除
+    await waitFor(() => expect(document.body).not.toHaveClass('modal-open'))
+    expect(screen.queryByRole('dialog', { name: '管理账本' })).not.toBeInTheDocument()
   })
 
   it('提示固定在＋号上方（读 styles.css 的 CSS 契约）', () => {

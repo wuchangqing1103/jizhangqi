@@ -72,5 +72,9 @@ describe('ConfirmDialog', () => {
     // 记账面板的遮罩同样不能有毛玻璃与淡入；根部背景要和 body 同色，首帧补画才不会发白
     expect(css).not.toMatch(/\.sheet-backdrop\s*\{[^}]*backdrop-filter/)
     expect(css).toMatch(/html\s*\{[^}]*background-color:\s*var\(--bg\)/)
+
+    // 安全区那条永远不参与变暗，否则 iOS 单独合成它，开与关都会闪一帧
+    expect(css).toMatch(/\.modal-scrim\s*\{[^}]*top:\s*env\(safe-area-inset-top/)
+    expect(css).toMatch(/\.composer-layer\s*\{[^}]*top:\s*env\(safe-area-inset-top/)
   })
 })

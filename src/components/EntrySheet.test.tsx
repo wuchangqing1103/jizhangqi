@@ -108,6 +108,8 @@ describe('记账面板：结构、分类与聚焦', () => {
     // 进场时遮罩不做淡入、不带毛玻璃：全屏层一参与合成，iOS 顶部安全区就慢一帧
     expect(styles).not.toMatch(/\.sheet-backdrop\s*\{[^}]*fade-in/)
     expect(styles).not.toMatch(/\.sheet-backdrop\s*\{[^}]*backdrop-filter/)
+    // 安全区那条也不许被盖住，否则关闭时同样闪
+    expect(styles).toMatch(/\.sheet-backdrop\s*\{[^}]*top:\s*env\(safe-area-inset-top/)
   })
 
   it('关闭时先播退场动画，240ms 后才通知父组件卸载，重复点只关一次', () => {

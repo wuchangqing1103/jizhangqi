@@ -836,6 +836,8 @@ p {
 .sheet-backdrop {
   position: fixed;
   inset: 0;
+  /* 顶部安全区那条永远不参与变暗：iOS 用它单独合成，任何盖上去的层都会让它慢一帧（开与关都闪） */
+  top: env(safe-area-inset-top, 0px);
   z-index: 30;
   background: rgba(24, 22, 18, 0.34);
   /* 毛玻璃与淡入都会让 iOS 单独重绘顶部安全区，闪一下；遮罩直接出现，动画交给面板本身 */
@@ -1237,6 +1239,8 @@ p {
 .modal-scrim {
   position: fixed;
   inset: 0;
+  /* 同上：安全区那条不参与变暗，开与关都不会闪 */
+  top: env(safe-area-inset-top, 0px);
   z-index: 50;
   background: rgba(24, 22, 18, 0.44);
   /* 不做 opacity 过渡：全屏层一旦参与合成动画，iOS 会让顶部安全区落后一帧（先亮后暗）。
@@ -1948,6 +1952,7 @@ body.modal-open {
 .composer-layer {
   position: fixed;
   inset: 0;
+  top: env(safe-area-inset-top, 0px);
   z-index: 60;
   background: rgba(24, 22, 18, 0.2);
   /* 同样不做淡入：全屏层一淡入，顶部安全区就慢一帧 */

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
-import { X } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 import type { Account } from '../types'
 import { MAX_ACCOUNT_NAME } from '../lib/accounts'
 import { modalClass, useModalClose } from '../lib/useModalClose'
+import { Composer } from './Composer'
+import { ModalLayer } from './ModalLayer'
 
 interface AccountPanelProps {
   accounts: Account[]
@@ -13,6 +15,8 @@ interface AccountPanelProps {
   onRemove: (id: string) => void
 }
 
+type ComposerState = { mode: 'create' } | { mode: 'rename'; account: Account }
+
 /** 账本管理：新增 / 改名 / 删除（删除会先转移记录，见 App 的二次确认） */
 export function AccountPanel({
   accounts,
@@ -22,53 +26,23 @@ export function AccountPanel({
   onRename,
   onRemove,
 }: AccountPanelProps) {
-  const [draftName, setDraftName] = useState('')
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editingName, setEditingName] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [composer, setComposer] = useState<ComposerState | null>(null)
   const { closing, close } = useModalClose(onClose)
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault()
-        close()
-      }
+      if (event.key !== 'Escape') return
+      // 输入卡自己处理 Esc，别把整个面板一起关掉
+      if (composer) return
+      event.preventDefault()
+      close()
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [close])
-
-  function handleCreate(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const message = onCreate(draftName)
-    if (message) {
-      setError(message)
-      return
-    }
-    setError(null)
-    setDraftName('')
-  }
-
-  function startRename(account: Account) {
-    setEditingId(account.id)
-    setEditingName(account.name)
-    setError(null)
-  }
-
-  function handleRename(event: React.FormEvent<HTMLFormElement>, account: Account) {
-    event.preventDefault()
-    const message = onRename(account.id, editingName)
-    if (message) {
-      setError(message)
-      return
-    }
-    setError(null)
-    setEditingId(null)
-  }
+  }, [close, composer])
 
   return (
-    <div className={modalClass('modal-backdrop', closing)}>
+    <ModalLayer>
       <div
         className={modalClass('account-card', closing)}
         role="dialog"
@@ -92,66 +66,54 @@ export function AccountPanel({
                 style={{ background: account.color }}
                 aria-hidden="true"
               />
-              {editingId === account.id ? (
-                <form
-                  className="account-row-edit"
-                  onSubmit={(event) => handleRename(event, account)}
-                >
-                  <input
-                    aria-label={`新名字 ${account.name}`}
-                    value={editingName}
-                    maxLength={MAX_ACCOUNT_NAME}
-                    onChange={(event) => setEditingName(event.target.value)}
-                  />
-                  <button type="submit">保存</button>
-                  <button type="button" onClick={() => setEditingId(null)}>
-                    取消
-                  </button>
-                </form>
-              ) : (
-                <>
-                  <span className="account-row-name">{account.name}</span>
-                  <span className="account-row-count">{counts[account.id] ?? 0} 笔</span>
-                  <button
-                    type="button"
-                    className="account-row-action"
-                    aria-label={`改名 ${account.name}`}
-                    onClick={() => startRename(account)}
-                  >
-                    改名
-                  </button>
-                  <button
-                    type="button"
-                    className="account-row-action danger"
-                    aria-label={`删除 ${account.name}`}
-                    disabled={accounts.length <= 1}
-                    onClick={() => onRemove(account.id)}
-                  >
-                    删除
-                  </button>
-                </>
-              )}
+              <span className="account-row-name">{account.name}</span>
+              <span className="account-row-count">{counts[account.id] ?? 0} 笔</span>
+              <button
+                type="button"
+                className="account-row-action"
+                aria-label={`改名 ${account.name}`}
+                onClick={() => setComposer({ mode: 'rename', account })}
+              >
+                改名
+              </button>
+              <button
+                type="button"
+                className="account-row-action danger"
+                aria-label={`删除 ${account.name}`}
+                disabled={accounts.length <= 1}
+                onClick={() => onRemove(account.id)}
+              >
+                删除
+              </button>
             </li>
           ))}
         </ul>
 
-        <form className="account-add" onSubmit={handleCreate}>
-          <input
-            aria-label="新账本名"
-            placeholder={`新账本名（最多 ${MAX_ACCOUNT_NAME} 字）`}
-            value={draftName}
-            maxLength={MAX_ACCOUNT_NAME}
-            onChange={(event) => setDraftName(event.target.value)}
-          />
-          <button type="submit">新增</button>
-        </form>
-
-        {error && (
-          <p className="backup-notice error" role="alert">
-            {error}
-          </p>
-        )}
+        <button
+          type="button"
+          className="account-add-trigger"
+          onClick={() => setComposer({ mode: 'create' })}
+        >
+          <Plus size={14} strokeWidth={2} aria-hidden="true" />
+          新增账本
+        </button>
       </div>
-    </div>
+
+      {composer && (
+        <Composer
+          title={composer.mode === 'create' ? '新账本名' : `新名字 ${composer.account.name}`}
+          initialValue={composer.mode === 'rename' ? composer.account.name : ''}
+          placeholder={`新账本名（最多 ${MAX_ACCOUNT_NAME} 字）`}
+          maxLength={MAX_ACCOUNT_NAME}
+          confirmLabel={composer.mode === 'create' ? '新增' : '保存'}
+          onSubmit={(value) =>
+            composer.mode === 'create'
+              ? onCreate(value)
+              : onRename(composer.account.id, value)
+          }
+          onClose={() => setComposer(null)}
+        />
+      )}
+    </ModalLayer>
   )
 }

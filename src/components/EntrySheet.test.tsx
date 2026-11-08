@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it, vi } from 'vitest'
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { EntrySheet } from './EntrySheet'
 import { DEFAULT_ACCOUNT_ID, PRESET_ACCOUNTS } from '../lib/storage'
@@ -51,16 +51,24 @@ describe('记账面板：结构、分类与聚焦', () => {
     expect(within(incomeGroup).getAllByRole('button')).toHaveLength(5)
   })
 
-  it('备注聚焦时只滚 body：jsdom 无 scrollIntoView 不报错，有则按 block:center 调用', () => {
-    renderSheet()
-    const note = screen.getByLabelText('备注')
+  it('备注不在面板里直接输入：点开输入卡、完成后写回并随记录保存', async () => {
+    const user = userEvent.setup()
+    const { sheet, onSubmit } = renderSheet()
 
-    expect(() => fireEvent.focus(note)).not.toThrow()
+    const trigger = screen.getByRole('button', { name: '备注' })
+    expect(trigger).toHaveTextContent('添加备注（选填）')
 
-    const scrollIntoView = vi.fn()
-    note.scrollIntoView = scrollIntoView
-    fireEvent.focus(note)
-    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'center', behavior: 'smooth' })
+    await user.click(trigger)
+    const card = screen.getByRole('dialog', { name: '备注' })
+    await user.type(within(card).getByLabelText('备注'), '和同事')
+    await user.click(within(card).getByRole('button', { name: '完成' }))
+
+    await waitFor(() => expect(trigger).toHaveTextContent('和同事'))
+
+    await user.click(screen.getByRole('button', { name: '9' }))
+    await user.click(within(sheet).getByRole('button', { name: '保存' }))
+
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ amount: 900, note: '和同事' }))
   })
 
   it('「记到」默认选中传入账本，切换后保存带上 accountId', async () => {

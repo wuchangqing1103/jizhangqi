@@ -5,6 +5,7 @@ import { findCategory, getCategories } from '../data/categories'
 import { addDays, todayStr } from '../lib/date'
 import { amountInputFromCents, parseAmountInput } from '../lib/format'
 import { CategoryIcon } from './CategoryIcon'
+import { Composer } from './Composer'
 
 interface EntrySheetProps {
   record: RecordItem | null
@@ -50,6 +51,8 @@ export function EntrySheet({
   const [category, setCategory] = useState(record?.category ?? 'food')
   const [date, setDate] = useState(record?.date ?? todayStr())
   const [note, setNote] = useState(record?.note ?? '')
+  // 备注不在面板里直接打字：键盘会把整页顶起来，改成浮在屏幕上半部的输入卡
+  const [noteOpen, setNoteOpen] = useState(false)
   const [accountId, setAccountId] = useState(
     record?.accountId ?? defaultAccountId ?? accounts[0]?.id ?? '',
   )
@@ -253,19 +256,14 @@ export function EntrySheet({
             ))}
           </div>
 
-          <input
-            className="note-input"
-            type="text"
-            value={note}
-            maxLength={40}
-            placeholder="添加备注（选填）"
+          <button
+            type="button"
+            className={note ? 'note-input has-note' : 'note-input'}
             aria-label="备注"
-            onChange={(event) => setNote(event.target.value)}
-            onFocus={(event) => {
-              // 键盘弹起时只让 .sheet-body 内部滚到输入框，别把整页顶起来（jsdom 无此 API）
-              event.currentTarget.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
-            }}
-          />
+            onClick={() => setNoteOpen(true)}
+          >
+            {note || '添加备注（选填）'}
+          </button>
         </div>
 
         <div className="sheet-footer">
@@ -296,6 +294,21 @@ export function EntrySheet({
           <p className="keyboard-hint">键盘可直接输入 · Enter 保存 · Esc 关闭</p>
         </div>
       </div>
+
+      {noteOpen && (
+        <Composer
+          title="备注"
+          initialValue={note}
+          placeholder="写点什么（选填）"
+          multiline
+          maxLength={40}
+          onSubmit={(value) => {
+            setNote(value)
+            return null
+          }}
+          onClose={() => setNoteOpen(false)}
+        />
+      )}
     </>
   )
 }

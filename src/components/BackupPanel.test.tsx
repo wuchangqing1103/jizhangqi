@@ -103,7 +103,7 @@ describe('BackupPanel', () => {
     const { onImport, onClose } = setup()
 
     await user.click(screen.getByRole('button', { name: '关闭' }))
-    expect(document.querySelector('.modal-backdrop')).toHaveClass('is-closing')
+    expect(document.querySelector('.backup-card')).toHaveClass('is-closing')
     expect(onClose).not.toHaveBeenCalled()
 
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))

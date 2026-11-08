@@ -4,6 +4,7 @@ import { Copy, Download, Upload, X } from 'lucide-react'
 import type { Account, RecordItem } from '../types'
 import { backupFileName, buildBackup, parseBackup } from '../lib/backup'
 import { modalClass, useModalClose } from '../lib/useModalClose'
+import { ModalLayer } from './ModalLayer'
 
 interface BackupPanelProps {
   accounts: Account[]
@@ -109,7 +110,7 @@ export function BackupPanel({ accounts, records, onClose, onImport }: BackupPane
   }
 
   return (
-    <div className={modalClass('modal-backdrop', closing)}>
+    <ModalLayer>
       <div
         className={modalClass('backup-card', closing)}
         role="dialog"
@@ -192,6 +193,6 @@ export function BackupPanel({ accounts, records, onClose, onImport }: BackupPane
           )}
         </section>
       </div>
-    </div>
+    </ModalLayer>
   )
 }

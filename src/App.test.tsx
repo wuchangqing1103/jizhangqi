@@ -104,15 +104,22 @@ describe('记账器 App', () => {
     await user.click(screen.getByRole('button', { name: '编辑 餐饮 午饭' }))
     const dialog = screen.getByRole('dialog', { name: '编辑 餐饮 记录' })
 
-    const note = within(dialog).getByLabelText('备注')
-    expect(note).toHaveValue('午饭')
+    const note = within(dialog).getByRole('button', { name: '备注' })
+    expect(note).toHaveTextContent('午饭')
     expect(within(dialog).getByText('12.5')).toBeInTheDocument()
 
     await user.click(within(dialog).getByRole('button', { name: '删除一位' }))
     await user.click(within(dialog).getByRole('button', { name: '删除一位' }))
     await user.click(within(dialog).getByRole('button', { name: '3' }))
-    await user.clear(note)
-    await user.type(note, '晚饭')
+
+    // 备注在输入卡里改，键盘弹起时面板不动
+    await user.click(note)
+    const card = screen.getByRole('dialog', { name: '备注' })
+    const field = within(card).getByLabelText('备注')
+    await user.clear(field)
+    await user.type(field, '晚饭')
+    await user.click(within(card).getByRole('button', { name: '完成' }))
+
     await user.click(within(dialog).getByRole('button', { name: '保存' }))
 
     expect(screen.getByText('已更新记录')).toBeInTheDocument()
@@ -326,21 +333,34 @@ describe('记账器 App', () => {
     await user.click(screen.getByRole('button', { name: '管理账本' }))
     const panel = screen.getByRole('dialog', { name: '管理账本' })
 
-    await user.type(within(panel).getByLabelText('新账本名'), '旅行')
-    await user.click(within(panel).getByRole('button', { name: '新增' }))
-    expect(screen.getByRole('button', { name: '旅行' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '新增账本' }))
+    let card = screen.getByRole('dialog', { name: '新账本名' })
+    await user.type(within(card).getByLabelText('新账本名'), '旅行')
+    await user.click(within(card).getByRole('button', { name: '新增' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: '旅行' })).toBeInTheDocument())
+    // 等上一张输入卡退场完再打开下一张
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: '新账本名' })).not.toBeInTheDocument(),
+    )
 
-    await user.type(within(panel).getByLabelText('新账本名'), '旅行')
-    await user.click(within(panel).getByRole('button', { name: '新增' }))
-    expect(within(panel).getByRole('alert')).toHaveTextContent('已经有同名账本了')
+    await user.click(screen.getByRole('button', { name: '新增账本' }))
+    card = screen.getByRole('dialog', { name: '新账本名' })
+    await user.type(within(card).getByLabelText('新账本名'), '旅行')
+    await user.click(within(card).getByRole('button', { name: '新增' }))
+    expect(within(card).getByRole('alert')).toHaveTextContent('已经有同名账本了')
+    await user.click(within(card).getByRole('button', { name: '取消' }))
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: '新账本名' })).not.toBeInTheDocument(),
+    )
 
     await user.click(within(panel).getByRole('button', { name: '改名 旅行' }))
-    const input = within(panel).getByLabelText('新名字 旅行')
+    const renameCard = screen.getByRole('dialog', { name: '新名字 旅行' })
+    const input = within(renameCard).getByLabelText('新名字 旅行')
     await user.clear(input)
     await user.type(input, '出行')
-    await user.click(within(panel).getByRole('button', { name: '保存' }))
+    await user.click(within(renameCard).getByRole('button', { name: '保存' }))
 
-    expect(screen.getByRole('button', { name: '出行' })).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('button', { name: '出行' })).toBeInTheDocument())
     expect(screen.queryByRole('button', { name: '旅行' })).not.toBeInTheDocument()
   })
 
@@ -352,7 +372,7 @@ describe('记账器 App', () => {
     expect(screen.getByRole('dialog', { name: '管理账本' })).toBeInTheDocument()
     expect(document.body).toHaveClass('modal-open')
 
-    fireEvent.click(document.querySelector('.modal-backdrop') as HTMLElement)
+    fireEvent.click(document.querySelector('.modal-scrim') as HTMLElement)
     expect(screen.getByRole('dialog', { name: '管理账本' })).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: '关闭账本管理' }))

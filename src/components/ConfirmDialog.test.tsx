@@ -34,12 +34,11 @@ describe('ConfirmDialog', () => {
     const user = userEvent.setup()
     const { onCancel, onConfirm } = setup()
 
-    fireEvent.click(document.querySelector('.modal-backdrop') as HTMLElement)
+    fireEvent.click(document.querySelector('.modal-layer') as HTMLElement)
     expect(onCancel).not.toHaveBeenCalled()
 
     await user.click(screen.getByRole('button', { name: '取消' }))
 
-    expect(document.querySelector('.modal-backdrop')).toHaveClass('is-closing')
     expect(screen.getByRole('alertdialog')).toHaveClass('is-closing')
     await waitFor(() => expect(onCancel).toHaveBeenCalledTimes(1))
     expect(onConfirm).not.toHaveBeenCalled()
@@ -54,15 +53,16 @@ describe('ConfirmDialog', () => {
     expect(onConfirm).toHaveBeenCalledTimes(1)
   })
 
-  it('遮罩不用毛玻璃，弹层进退场用统一曲线（CSS 契约）', () => {
+  it('弹层挂到 body、遮罩常驻只切透明度（CSS 契约）', () => {
     const css = readFileSync('src/styles.css', 'utf8')
 
-    // 毛玻璃会让 iOS 在弹层出现时重合成整页，顶部安全区会闪一下
-    expect(css).not.toMatch(/\.modal-backdrop\s*\{[^}]*backdrop-filter:\s*blur/)
+    // 遮罩不能再有新特效，否则 iOS 每次打开都会重合成整页，顶部安全区闪一下
+    expect(css).not.toMatch(/\.modal-(scrim|layer)\s*\{[^}]*backdrop-filter/)
     expect(css).toMatch(
-      /\.modal-backdrop\s*\{[^}]*animation:\s*fade-in 0\.28s cubic-bezier\(0\.32, 0\.72, 0, 1\)/,
+      /\.modal-scrim\s*\{[^}]*opacity:\s*0;[^}]*transition:\s*opacity 0\.28s cubic-bezier\(0\.32, 0\.72, 0, 1\)/,
     )
-    expect(css).toMatch(/\.modal-backdrop\.is-closing\s*\{[^}]*fade-out 0\.2s/)
+    expect(css).toMatch(/\.modal-scrim\.is-open\s*\{[^}]*opacity:\s*1;[^}]*pointer-events:\s*auto/)
+    expect(css).toMatch(/\.modal-layer\s*\{[^}]*position:\s*fixed;[^}]*pointer-events:\s*none/)
     expect(css).toMatch(
       /\.confirm-card\s*\{[^}]*animation:\s*dialog-in 0\.34s cubic-bezier\(0\.32, 0\.72, 0, 1\)/,
     )

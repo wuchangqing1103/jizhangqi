@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { MoreHorizontal, Wallet } from 'lucide-react'
 import type { Account, AccountFilter, LedgerState, RecordDraft, RecordItem, Tab } from './types'
 import { currentMonthKey, monthOf } from './lib/date'
@@ -350,6 +351,16 @@ export default function App() {
 
         {toast && <Toast key={toast.id} message={toast.message} />}
       </div>
+
+      {/* 遮罩常驻在 body 上，只切透明度：每次打开不再新建合成层，iOS 顶部那条就不会闪 */}
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className={modalOpen ? 'modal-scrim is-open' : 'modal-scrim'}
+            aria-hidden="true"
+          />,
+          document.body,
+        )}
     </div>
   )
 }

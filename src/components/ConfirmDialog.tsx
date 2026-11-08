@@ -1,5 +1,6 @@
 import { Trash2 } from 'lucide-react'
 import { modalClass, useModalClose } from '../lib/useModalClose'
+import { ModalLayer } from './ModalLayer'
 
 interface ConfirmDialogProps {
   title: string
@@ -19,7 +20,7 @@ export function ConfirmDialog({
   const { closing, close } = useModalClose(onCancel)
 
   return (
-    <div className={modalClass('modal-backdrop', closing)}>
+    <ModalLayer>
       <div
         className={modalClass('confirm-card', closing)}
         role="alertdialog"
@@ -41,6 +42,6 @@ export function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </ModalLayer>
   )
 }

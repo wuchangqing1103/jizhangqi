@@ -30,41 +30,49 @@ describe('AccountPanel：账本管理', () => {
     }
   })
 
-  it('新增账本调用 onCreate，成功后会清空输入', async () => {
+  it('新增账本走输入卡：填名、提交、卡片收起', async () => {
     const user = userEvent.setup()
     const { onCreate } = setup()
 
-    const input = screen.getByLabelText('新账本名')
+    await user.click(screen.getByRole('button', { name: '新增账本' }))
+
+    const card = screen.getByRole('dialog', { name: '新账本名' })
+    const input = within(card).getByLabelText('新账本名')
     await user.type(input, '旅行')
-    await user.click(screen.getByRole('button', { name: '新增' }))
+    await user.click(within(card).getByRole('button', { name: '新增' }))
 
     expect(onCreate).toHaveBeenCalledWith('旅行')
-    expect(input).toHaveValue('')
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: '新账本名' })).not.toBeInTheDocument(),
+    )
   })
 
-  it('新增失败时显示错误文案，输入保留', async () => {
+  it('新增失败时输入卡不收起，显示错误文案', async () => {
     const user = userEvent.setup()
     setup({ onCreate: vi.fn(() => '已经有同名账本了') })
 
-    const input = screen.getByLabelText('新账本名')
+    await user.click(screen.getByRole('button', { name: '新增账本' }))
+    const card = screen.getByRole('dialog', { name: '新账本名' })
+    const input = within(card).getByLabelText('新账本名')
     await user.type(input, '现金')
-    await user.click(screen.getByRole('button', { name: '新增' }))
+    await user.click(within(card).getByRole('button', { name: '新增' }))
 
-    expect(screen.getByRole('alert')).toHaveTextContent('已经有同名账本了')
+    expect(within(card).getByRole('alert')).toHaveTextContent('已经有同名账本了')
     expect(input).toHaveValue('现金')
   })
 
-  it('改名进入内联编辑，保存后调用 onRename', async () => {
+  it('改名走输入卡，回填原名，保存后调用 onRename', async () => {
     const user = userEvent.setup()
     const { onRename } = setup()
 
     await user.click(screen.getByRole('button', { name: '改名 现金' }))
-    const input = screen.getByLabelText('新名字 现金')
+    const card = screen.getByRole('dialog', { name: '新名字 现金' })
+    const input = within(card).getByLabelText('新名字 现金')
     expect(input).toHaveValue('现金')
 
     await user.clear(input)
     await user.type(input, '零钱')
-    await user.click(screen.getByRole('button', { name: '保存' }))
+    await user.click(within(card).getByRole('button', { name: '保存' }))
 
     expect(onRename).toHaveBeenCalledWith('acc-cash', '零钱')
   })
@@ -88,7 +96,7 @@ describe('AccountPanel：账本管理', () => {
     const { onClose } = setup()
 
     await user.click(screen.getByRole('button', { name: '关闭账本管理' }))
-    expect(document.querySelector('.modal-backdrop')).toHaveClass('is-closing')
+    expect(document.querySelector('.account-card')).toHaveClass('is-closing')
     expect(onClose).not.toHaveBeenCalled()
 
     await user.click(screen.getByRole('button', { name: '关闭账本管理' }))
@@ -99,7 +107,7 @@ describe('AccountPanel：账本管理', () => {
     const user = userEvent.setup()
     const { onClose } = setup()
 
-    fireEvent.click(document.querySelector('.modal-backdrop') as HTMLElement)
+    fireEvent.click(document.querySelector('.modal-layer') as HTMLElement)
     expect(onClose).not.toHaveBeenCalled()
 
     await user.keyboard('{Escape}')

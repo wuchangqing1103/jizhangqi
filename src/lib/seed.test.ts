@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { currentMonthKey } from './date'
-import { STORAGE_KEY, readLedger } from './storage'
+import { PRESET_ACCOUNTS, STORAGE_KEY, readLedger } from './storage'
 import { createSeedRecords, resetToSeed } from './seed'
 
 const now = new Date(2026, 10, 7, 12, 0, 0)
@@ -14,9 +14,11 @@ describe('createSeedRecords', () => {
     expect(records.some((item) => item.date.startsWith('2026-10'))).toBe(true)
   })
 
-  it('所有记录都是合法数据', () => {
+  it('所有记录都是合法数据，且都归属某个预置账本', () => {
     const records = createSeedRecords(now)
+    const accountIds = new Set(PRESET_ACCOUNTS.map((account) => account.id))
     for (const item of records) {
+      expect(accountIds.has(item.accountId)).toBe(true)
       expect(item.date).toMatch(/^\d{4}-\d{2}-\d{2}$/)
       expect(Number.isInteger(item.amount)).toBe(true)
       expect(item.amount).toBeGreaterThan(0)
@@ -46,11 +48,12 @@ describe('resetToSeed', () => {
   })
 
   it('写入示例账单并可通过 storage 读回', () => {
-    const records = resetToSeed(now)
-    expect(records).toHaveLength(createSeedRecords(now).length)
+    const ledger = resetToSeed(now)
+    expect(ledger.records).toHaveLength(createSeedRecords(now).length)
+    expect(ledger.accounts).toHaveLength(PRESET_ACCOUNTS.length)
     const read = readLedger()
     expect(read.status).toBe('ok')
-    if (read.status === 'ok') expect(read.records).toHaveLength(records.length)
+    if (read.status === 'ok') expect(read.ledger.records).toHaveLength(ledger.records.length)
     expect(localStorage.getItem(STORAGE_KEY)).not.toBeNull()
   })
 })

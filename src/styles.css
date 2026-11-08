@@ -1661,3 +1661,209 @@ body.sheet-open {
   overflow: hidden;
   overscroll-behavior: none;
 }
+
+/* ---------- 账本：顶部切换条 ---------- */
+.account-bar {
+  display: flex;
+  gap: 7px;
+  padding: 0 20px 10px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.account-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.account-chip {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--ink-3);
+  font-size: 12px;
+  line-height: 1.5;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.account-chip.active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #f7f4ee;
+}
+
+.account-dot {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--acc, #8c8a83);
+}
+
+.account-chip.active .account-dot {
+  background: #f7f4ee;
+}
+
+.account-manage {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-3);
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* ---------- 记账面板：记到哪个账本 ---------- */
+.account-pick {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 8px 0 2px;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+
+.account-pick select {
+  max-width: 62%;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+}
+
+/* ---------- 账本管理 ---------- */
+.account-card {
+  width: 100%;
+  max-width: 360px;
+  max-height: min(78vh, 640px);
+  overflow-y: auto;
+  padding: 18px 18px 16px;
+  border-radius: 22px;
+  background: #fbf9f4;
+  box-shadow: 0 30px 70px -20px rgba(20, 18, 14, 0.5);
+  animation: dialog-in 0.2s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+
+.account-list {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.account-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.account-row:last-child {
+  border-bottom: 0;
+}
+
+.account-row-dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.account-row-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 13.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-row-count {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.account-row-action {
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: #efeae1;
+  color: var(--ink-3);
+  font-size: 11.5px;
+}
+
+.account-row-action.danger {
+  color: var(--danger);
+}
+
+.account-row-action:disabled {
+  opacity: 0.4;
+}
+
+.account-row-edit {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.account-row-edit input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+.account-row-edit button {
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: #efeae1;
+  color: var(--ink-3);
+  font-size: 11.5px;
+}
+
+.account-add {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.account-add input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+.account-add button {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: #f7f4ee;
+  font-size: 12.5px;
+}

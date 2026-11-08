@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { CalendarDays, Delete, X } from 'lucide-react'
-import type { RecordDraft, RecordItem, RecordType } from '../types'
+import type { Account, RecordDraft, RecordItem, RecordType } from '../types'
 import { findCategory, getCategories } from '../data/categories'
 import { addDays, todayStr } from '../lib/date'
 import { amountInputFromCents, parseAmountInput } from '../lib/format'
@@ -8,6 +8,9 @@ import { CategoryIcon } from './CategoryIcon'
 
 interface EntrySheetProps {
   record: RecordItem | null
+  accounts: Account[]
+  /** 新记录默认归属的账本（「全部」视图下是最近用过的那个） */
+  defaultAccountId: string
   onClose: () => void
   onSubmit: (draft: RecordDraft) => void
   onRequestDelete: (record: RecordItem) => void
@@ -33,13 +36,23 @@ function nextAmount(current: string, key: string): string {
   return current + key
 }
 
-export function EntrySheet({ record, onClose, onSubmit, onRequestDelete }: EntrySheetProps) {
+export function EntrySheet({
+  record,
+  accounts,
+  defaultAccountId,
+  onClose,
+  onSubmit,
+  onRequestDelete,
+}: EntrySheetProps) {
   const isEdit = record !== null
   const [type, setType] = useState<RecordType>(record?.type ?? 'expense')
   const [amountText, setAmountText] = useState(record ? amountInputFromCents(record.amount) : '')
   const [category, setCategory] = useState(record?.category ?? 'food')
   const [date, setDate] = useState(record?.date ?? todayStr())
   const [note, setNote] = useState(record?.note ?? '')
+  const [accountId, setAccountId] = useState(
+    record?.accountId ?? defaultAccountId ?? accounts[0]?.id ?? '',
+  )
   // 退场：先挂上 is-closing 让面板滑下去，动画结束再让 App 卸载，避免「啪」一下消失
   const [closing, setClosing] = useState(false)
   const closingRef = useRef(false)
@@ -77,7 +90,7 @@ export function EntrySheet({ record, onClose, onSubmit, onRequestDelete }: Entry
 
   function submit() {
     if (!canSave) return
-    onSubmit({ type, amount, category, date, note: note.trim() })
+    onSubmit({ type, amount, category, date, note: note.trim(), accountId })
   }
 
   useEffect(() => {
@@ -93,7 +106,7 @@ export function EntrySheet({ record, onClose, onSubmit, onRequestDelete }: Entry
       if (event.key === 'Enter') {
         if (amount > 0) {
           event.preventDefault()
-          onSubmit({ type, amount, category, date, note: note.trim() })
+          onSubmit({ type, amount, category, date, note: note.trim(), accountId })
         }
         return
       }
@@ -113,7 +126,7 @@ export function EntrySheet({ record, onClose, onSubmit, onRequestDelete }: Entry
 
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [amount, category, close, date, note, onSubmit, type])
+  }, [accountId, amount, category, close, date, note, onSubmit, type])
 
   return (
     <>
@@ -144,6 +157,21 @@ export function EntrySheet({ record, onClose, onSubmit, onRequestDelete }: Entry
         </div>
 
         <div className="sheet-body">
+          <label className="account-pick">
+            <span>记到</span>
+            <select
+              aria-label="记到哪个账本"
+              value={accountId}
+              onChange={(event) => setAccountId(event.target.value)}
+            >
+              {accounts.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <div className="type-switch" role="group" aria-label="收支类型">
             <button
               type="button"

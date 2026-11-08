@@ -1,6 +1,6 @@
-import type { RecordItem, RecordType } from '../types'
+import type { LedgerState, RecordItem, RecordType } from '../types'
 import { addDays, addMonths, currentMonthKey, monthOf, parseDate, toDateStr } from './date'
-import { readLedger, writeLedger } from './storage'
+import { ALL_ACCOUNTS, clonePresetAccounts, readLedger, writeLedger } from './storage'
 
 interface Template {
   offset: number
@@ -9,6 +9,25 @@ interface Template {
   category: string
   note: string
 }
+
+/** 示例数据按分类落到不同账本，方便一眼看出筛选效果 */
+const ACCOUNT_BY_CATEGORY: Record<string, string> = {
+  food: 'acc-wechat',
+  transport: 'acc-cash',
+  shopping: 'acc-alipay',
+  housing: 'acc-alipay',
+  study: 'acc-alipay',
+  medical: 'acc-cash',
+  social: 'acc-life',
+  fun: 'acc-life',
+  other: 'acc-cash',
+  salary: 'acc-work',
+  parttime: 'acc-work',
+  bonus: 'acc-work',
+  'income-other': 'acc-work',
+}
+
+const FALLBACK_ACCOUNT = 'acc-cash'
 
 const CURRENT_MONTH_TEMPLATES: Template[] = [
   { offset: 0, type: 'expense', amount: 950, category: 'food', note: '豆浆油条' },
@@ -73,6 +92,10 @@ function createdAtAt(dateStr: string, minutes: number, now: Date): number {
   return Math.min(candidate, now.getTime() - 60 * 1000)
 }
 
+function accountOf(category: string): string {
+  return ACCOUNT_BY_CATEGORY[category] ?? FALLBACK_ACCOUNT
+}
+
 /** 演示用示例账本：当月近 7 天 + 上月整月，都是相对「今天」生成的 */
 export function createSeedRecords(now: Date = new Date()): RecordItem[] {
   const monthKey = currentMonthKey(now)
@@ -98,6 +121,7 @@ export function createSeedRecords(now: Date = new Date()): RecordItem[] {
       date,
       note,
       createdAt: createdAtAt(date, minutes, now),
+      accountId: accountOf(category),
     })
   }
 
@@ -127,20 +151,28 @@ export function createSeedRecords(now: Date = new Date()): RecordItem[] {
   return records
 }
 
-/** 首次打开（本地没有账本）时写入示例数据；已有数据或损坏数据不动 */
-export function initialRecords(now: Date = new Date()): RecordItem[] {
-  const read = readLedger()
-  if (read.status === 'ok') return read.records
-  if (read.status === 'missing') {
-    const seeded = createSeedRecords(now)
-    writeLedger(seeded)
-    return seeded
+function seedLedger(now: Date): LedgerState {
+  return {
+    accounts: clonePresetAccounts(),
+    activeAccountId: ALL_ACCOUNTS,
+    records: createSeedRecords(now),
   }
-  return []
 }
 
-export function resetToSeed(now: Date = new Date()): RecordItem[] {
-  const seeded = createSeedRecords(now)
-  writeLedger(seeded)
-  return seeded
+/** 首次打开（本地没有账本）时写入示例数据；已有数据或损坏数据不动 */
+export function initialLedger(now: Date = new Date()): LedgerState {
+  const read = readLedger()
+  if (read.status === 'ok') return read.ledger
+  if (read.status === 'missing') {
+    const ledger = seedLedger(now)
+    writeLedger(ledger)
+    return ledger
+  }
+  return { accounts: clonePresetAccounts(), activeAccountId: ALL_ACCOUNTS, records: [] }
+}
+
+export function resetToSeed(now: Date = new Date()): LedgerState {
+  const ledger = seedLedger(now)
+  writeLedger(ledger)
+  return ledger
 }

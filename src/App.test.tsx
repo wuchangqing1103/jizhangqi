@@ -3,9 +3,18 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
-import type { RecordItem } from './types'
+import type { Account, RecordItem } from './types'
 import { addDays, addMonths, currentMonthKey, monthLabel, monthOf, todayStr } from './lib/date'
-import { STORAGE_KEY, readLedger } from './lib/storage'
+import {
+  ALL_ACCOUNTS,
+  DEFAULT_ACCOUNT_ID,
+  PRESET_ACCOUNTS,
+  STORAGE_KEY,
+  readLedger,
+} from './lib/storage'
+
+const CASH = 'acc-cash'
+const WECHAT = 'acc-wechat'
 
 function makeRecord(overrides: Partial<RecordItem> = {}): RecordItem {
   return {
@@ -16,18 +25,30 @@ function makeRecord(overrides: Partial<RecordItem> = {}): RecordItem {
     date: todayStr(),
     note: '午饭',
     createdAt: Date.now(),
+    accountId: CASH,
     ...overrides,
   }
 }
 
+function writeLedger(
+  records: RecordItem[],
+  accounts: Account[] = PRESET_ACCOUNTS,
+  activeAccountId = ALL_ACCOUNTS,
+) {
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({ version: 2, accounts, activeAccountId, records }),
+  )
+}
+
 function renderWith(records: RecordItem[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, records }))
+  writeLedger(records)
   return render(<App />)
 }
 
 function storedRecords(): RecordItem[] {
   const read = readLedger()
-  return read.status === 'ok' ? read.records : []
+  return read.status === 'ok' ? read.ledger.records : []
 }
 
 describe('记账器 App', () => {
@@ -70,6 +91,7 @@ describe('记账器 App', () => {
       amount: 1250,
       category: 'food',
       date: yesterday,
+      accountId: DEFAULT_ACCOUNT_ID,
     })
     expect(screen.getByText(monthLabel(monthOf(yesterday)))).toBeInTheDocument()
   })
@@ -176,7 +198,7 @@ describe('记账器 App', () => {
     expect(main.scrollTop).toBe(0)
   })
 
-  it('更多菜单只有备份和清空两项，底部显示版本号', async () => {
+  it('更多菜单只有备份和清空两项，底部显示版本号与构建时间', async () => {
     const user = userEvent.setup()
     renderWith([makeRecord()])
 
@@ -189,7 +211,12 @@ describe('记账器 App', () => {
         .map((item) => item.textContent?.trim()),
     ).toEqual(['导出/导入备份', '清空所有记录'])
     expect(within(menu).queryByRole('menuitem', { name: '重置示例账单' })).not.toBeInTheDocument()
-    expect(within(menu).getByText(/^(v\d+\.\d+\.\d+|dev)$/)).toBeInTheDocument()
+    // 本轮带构建时间，用来确认手机上跑的是不是新包
+    expect(
+      within(menu).getByText(
+        /^(v\d+\.\d+\.\d+ · \d{2}-\d{2} \d{2}:\d{2}|v\d+\.\d+\.\d+|dev)$/,
+      ),
+    ).toBeInTheDocument()
   })
 
   it('清空账本需要二次确认', async () => {
@@ -237,6 +264,82 @@ describe('记账器 App', () => {
     expect(screen.getByText('已删除记录').closest('.toast')).not.toBeNull()
     expect(screen.getByText('这个月还没有记录')).toBeInTheDocument()
     expect(storedRecords()).toEqual([])
+  })
+
+  it('切换账本只显示该账本的记录，「全部」合并显示', async () => {
+    const user = userEvent.setup()
+    renderWith([
+      makeRecord({ id: 'r1', note: '午饭', accountId: CASH }),
+      makeRecord({ id: 'r2', note: '打车', accountId: WECHAT }),
+    ])
+
+    expect(screen.getByRole('button', { name: '编辑 餐饮 午饭' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '编辑 餐饮 打车' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '微信' }))
+    expect(screen.getByRole('button', { name: '编辑 餐饮 打车' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '编辑 餐饮 午饭' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '全部' }))
+    expect(screen.getByRole('button', { name: '编辑 餐饮 午饭' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '编辑 餐饮 打车' })).toBeInTheDocument()
+  })
+
+  it('新增记录归属当前选中的账本', async () => {
+    const user = userEvent.setup()
+    renderWith([])
+
+    await user.click(screen.getByRole('button', { name: '微信' }))
+    await user.click(screen.getByRole('button', { name: '记一笔' }))
+
+    const dialog = screen.getByRole('dialog')
+    expect(within(dialog).getByLabelText('记到哪个账本')).toHaveValue(WECHAT)
+
+    await user.click(within(dialog).getByRole('button', { name: '9' }))
+    await user.click(within(dialog).getByRole('button', { name: '保存' }))
+
+    expect(storedRecords()[0]).toMatchObject({ accountId: WECHAT })
+  })
+
+  it('删除账本要二次确认，记录会转移到另一个账本', async () => {
+    const user = userEvent.setup()
+    renderWith([makeRecord({ id: 'r1' }), makeRecord({ id: 'r2' })])
+
+    await user.click(screen.getByRole('button', { name: '管理账本' }))
+    await user.click(screen.getByRole('button', { name: '删除 现金' }))
+
+    const alert = screen.getByRole('alertdialog')
+    expect(within(alert).getByText('2 条记录会转到「微信」，记录不会丢失。')).toBeInTheDocument()
+    await user.click(within(alert).getByRole('button', { name: '删除账本' }))
+
+    expect(storedRecords()).toHaveLength(2)
+    expect(storedRecords().every((item) => item.accountId === WECHAT)).toBe(true)
+    expect(screen.queryByRole('button', { name: '现金' })).not.toBeInTheDocument()
+  })
+
+  it('管理账本可以新增与改名，重名会被拦下', async () => {
+    const user = userEvent.setup()
+    renderWith([])
+
+    await user.click(screen.getByRole('button', { name: '管理账本' }))
+    const panel = screen.getByRole('dialog', { name: '管理账本' })
+
+    await user.type(within(panel).getByLabelText('新账本名'), '旅行')
+    await user.click(within(panel).getByRole('button', { name: '新增' }))
+    expect(screen.getByRole('button', { name: '旅行' })).toBeInTheDocument()
+
+    await user.type(within(panel).getByLabelText('新账本名'), '旅行')
+    await user.click(within(panel).getByRole('button', { name: '新增' }))
+    expect(within(panel).getByRole('alert')).toHaveTextContent('已经有同名账本了')
+
+    await user.click(within(panel).getByRole('button', { name: '改名 旅行' }))
+    const input = within(panel).getByLabelText('新名字 旅行')
+    await user.clear(input)
+    await user.type(input, '出行')
+    await user.click(within(panel).getByRole('button', { name: '保存' }))
+
+    expect(screen.getByRole('button', { name: '出行' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '旅行' })).not.toBeInTheDocument()
   })
 
   it('提示固定在＋号上方（读 styles.css 的 CSS 契约）', () => {

@@ -7,6 +7,7 @@ function record(overrides: Partial<RecordItem> & Pick<RecordItem, 'id' | 'type' 
     category: 'food',
     note: '',
     createdAt: 0,
+    accountId: 'acc-cash',
     ...overrides,
   }
 }

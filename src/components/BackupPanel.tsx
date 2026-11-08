@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { Copy, Download, Upload, X } from 'lucide-react'
-import type { RecordItem } from '../types'
+import type { Account, RecordItem } from '../types'
 import { backupFileName, buildBackup, parseBackup } from '../lib/backup'
 
 interface BackupPanelProps {
+  accounts: Account[]
   records: RecordItem[]
   onClose: () => void
-  onImport: (records: RecordItem[]) => void
+  onImport: (imported: { accounts: Account[]; records: RecordItem[] }) => void
 }
 
 interface Notice {
@@ -16,6 +17,7 @@ interface Notice {
 }
 
 interface Pending {
+  accounts: Account[]
   records: RecordItem[]
   total: number
   skipped: number
@@ -31,13 +33,16 @@ function readFileText(file: File): Promise<string> {
   })
 }
 
-export function BackupPanel({ records, onClose, onImport }: BackupPanelProps) {
+export function BackupPanel({ accounts, records, onClose, onImport }: BackupPanelProps) {
   // 冻结导出时刻，保证文件名与 exportedAt 一致
   const [now] = useState(() => new Date())
   const [notice, setNotice] = useState<Notice | null>(null)
   const [pending, setPending] = useState<Pending | null>(null)
   const fileName = backupFileName(now)
-  const backupText = useMemo(() => JSON.stringify(buildBackup(records, now), null, 2), [records, now])
+  const backupText = useMemo(
+    () => JSON.stringify(buildBackup({ accounts, records }, now), null, 2),
+    [accounts, records, now],
+  )
 
   async function handleCopy() {
     try {
@@ -84,7 +89,12 @@ export function BackupPanel({ records, onClose, onImport }: BackupPanelProps) {
         return
       }
       setNotice(null)
-      setPending(result)
+      setPending({
+        accounts: result.ledger.accounts,
+        records: result.ledger.records,
+        total: result.total,
+        skipped: result.skipped,
+      })
     } catch {
       setNotice({ kind: 'error', text: '读取文件失败，请重试' })
     }
@@ -92,7 +102,7 @@ export function BackupPanel({ records, onClose, onImport }: BackupPanelProps) {
 
   function handleConfirmImport() {
     if (!pending) return
-    onImport(pending.records)
+    onImport({ accounts: pending.accounts, records: pending.records })
     setPending(null)
   }
 
@@ -157,8 +167,8 @@ export function BackupPanel({ records, onClose, onImport }: BackupPanelProps) {
           {pending && (
             <div className="backup-preview">
               <p>
-                有效 {pending.records.length} 条 / 跳过 {pending.skipped} 条，将替换当前{' '}
-                {records.length} 条
+                有效 {pending.records.length} 条 / 跳过 {pending.skipped} 条（含 {pending.accounts.length}{' '}
+                个账本），将替换当前 {records.length} 条
               </p>
               <div className="backup-actions">
                 <button type="button" className="backup-button danger" onClick={handleConfirmImport}>

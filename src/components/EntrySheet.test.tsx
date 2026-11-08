@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { EntrySheet } from './EntrySheet'
+import { DEFAULT_ACCOUNT_ID, PRESET_ACCOUNTS } from '../lib/storage'
 
 const styles = readFileSync('src/styles.css', 'utf8')
 
@@ -11,7 +12,14 @@ function renderSheet() {
   const onSubmit = vi.fn()
   const onRequestDelete = vi.fn()
   render(
-    <EntrySheet record={null} onClose={onClose} onSubmit={onSubmit} onRequestDelete={onRequestDelete} />,
+    <EntrySheet
+      record={null}
+      accounts={PRESET_ACCOUNTS}
+      defaultAccountId={DEFAULT_ACCOUNT_ID}
+      onClose={onClose}
+      onSubmit={onSubmit}
+      onRequestDelete={onRequestDelete}
+    />,
   )
   const sheet = screen.getByRole('dialog', { name: '记一笔' })
   return { sheet, onClose, onSubmit, onRequestDelete }
@@ -53,6 +61,22 @@ describe('记账面板：结构、分类与聚焦', () => {
     note.scrollIntoView = scrollIntoView
     fireEvent.focus(note)
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'center', behavior: 'smooth' })
+  })
+
+  it('「记到」默认选中传入账本，切换后保存带上 accountId', async () => {
+    const user = userEvent.setup()
+    const { onSubmit } = renderSheet()
+
+    const pick = screen.getByLabelText('记到哪个账本')
+    expect(pick).toHaveValue(DEFAULT_ACCOUNT_ID)
+
+    await user.click(screen.getByRole('button', { name: '9' }))
+    await user.selectOptions(pick, 'acc-wechat')
+    await user.click(screen.getByRole('button', { name: '保存' }))
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 900, accountId: 'acc-wechat' }),
+    )
   })
 
   it('CSS 契约：三段式 flex、分类 5 列、键盘/保存键压矮、进出场单段缓动', () => {

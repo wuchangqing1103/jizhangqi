@@ -17,6 +17,7 @@ function makeRecord(overrides: Partial<RecordItem> = {}): RecordItem {
     date: todayStr(),
     note: '午饭',
     createdAt: Date.now(),
+    accountId: 'acc-cash',
     ...overrides,
   }
 }

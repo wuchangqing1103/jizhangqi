@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import type { RecordItem } from '../types'
 import { buildBackup } from '../lib/backup'
 import { BackupPanel } from './BackupPanel'
+import { PRESET_ACCOUNTS } from '../lib/storage'
 
 function makeRecord(overrides: Partial<RecordItem> = {}): RecordItem {
   return {
@@ -14,6 +15,7 @@ function makeRecord(overrides: Partial<RecordItem> = {}): RecordItem {
     date: '2026-11-07',
     note: '午饭',
     createdAt: 1794031200000,
+    accountId: 'acc-cash',
     ...overrides,
   }
 }
@@ -21,7 +23,7 @@ function makeRecord(overrides: Partial<RecordItem> = {}): RecordItem {
 function setup(records: RecordItem[] = [makeRecord()]) {
   const onImport = vi.fn()
   const onClose = vi.fn()
-  render(<BackupPanel records={records} onClose={onClose} onImport={onImport} />)
+  render(<BackupPanel accounts={PRESET_ACCOUNTS} records={records} onClose={onClose} onImport={onImport} />)
   return { onImport, onClose }
 }
 
@@ -37,10 +39,12 @@ describe('BackupPanel', () => {
     const payload = JSON.parse(textarea.value) as {
       app: string
       version: number
+      accounts: { id: string }[]
       records: RecordItem[]
     }
     expect(payload.app).toBe('jizhangqi')
-    expect(payload.version).toBe(1)
+    expect(payload.version).toBe(2)
+    expect(payload.accounts).toHaveLength(PRESET_ACCOUNTS.length)
     expect(payload.records).toHaveLength(2)
     expect(textarea.value).toContain('"note": "午饭"')
     expect(textarea.value).toContain('"note": "工资"')
@@ -52,7 +56,7 @@ describe('BackupPanel', () => {
     const incoming = [makeRecord({ id: 'x1', note: '导入的一笔' })]
 
     fireEvent.change(screen.getByLabelText('选择备份文件'), {
-      target: { files: [makeFile(buildBackup(incoming, new Date('2026-11-07T08:50:00.000Z')))] },
+      target: { files: [makeFile(buildBackup({ accounts: PRESET_ACCOUNTS, records: incoming }, new Date('2026-11-07T08:50:00.000Z')))] },
     })
 
     expect(await screen.findByText(/有效 1 条 \/ 跳过 0 条/)).toBeInTheDocument()
@@ -62,7 +66,9 @@ describe('BackupPanel', () => {
     await user.click(screen.getByRole('button', { name: '确认导入' }))
 
     expect(onImport).toHaveBeenCalledTimes(1)
-    expect(onImport).toHaveBeenCalledWith(incoming)
+    const imported = onImport.mock.calls[0][0] as { accounts: unknown[]; records: RecordItem[] }
+    expect(imported.records).toEqual(incoming)
+    expect(imported.accounts).toHaveLength(PRESET_ACCOUNTS.length)
   })
 
   it('预览后取消不会导入', async () => {
@@ -70,7 +76,7 @@ describe('BackupPanel', () => {
     const { onImport } = setup()
 
     fireEvent.change(screen.getByLabelText('选择备份文件'), {
-      target: { files: [makeFile(buildBackup([makeRecord({ id: 'x1' })]))] },
+      target: { files: [makeFile(buildBackup({ accounts: PRESET_ACCOUNTS, records: [makeRecord({ id: 'x1' })] }))] },
     })
     await screen.findByText(/有效 1 条/)
 

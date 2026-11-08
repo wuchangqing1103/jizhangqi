@@ -1,9 +1,12 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { RecordItem } from '../types'
 import { currentMonthKey, todayStr } from '../lib/date'
 import { BillPage } from './BillPage'
+
+const styles = readFileSync('src/styles.css', 'utf8')
 
 function makeRecord(overrides: Partial<RecordItem> = {}): RecordItem {
   return {
@@ -144,7 +147,10 @@ describe('账单页：左滑与长按删除', () => {
     const button = screen.getByRole('button', { name: '删除 餐饮 午饭' })
     const inner = button.querySelector('.record-delete-inner') as HTMLElement
 
-    expect(inner.querySelector('svg')).not.toBeNull()
+    const glyph = inner.querySelector('svg.trash-glyph') as SVGElement
+    expect(glyph).not.toBeNull()
+    // 实心多路径图形（垃圾桶轮廓 + 中间两道镂空），不是细线图标
+    expect(glyph.querySelector('path')).toHaveAttribute('fill-rule', 'evenodd')
     expect(inner.textContent).toBe('删除')
     // 收起时完全透明，并且不进 Tab 序列
     expect(inner.style.opacity).toBe('0')
@@ -172,5 +178,17 @@ describe('账单页：左滑与长按删除', () => {
     expect(document.querySelector('.day-totals')).toBeNull()
     expect(screen.queryByText(/^支出 ¥/)).not.toBeInTheDocument()
     expect(screen.queryByText(/^收入 ¥/)).not.toBeInTheDocument()
+  })
+
+  it('CSS 契约：删除位是分离的圆角胶囊，吸附用 iOS 曲线', () => {
+    // 右侧留 8px、宽 68px：行停在 -84px 时，胶囊左缘离记录右缘还有 8px 空隙
+    expect(styles).toMatch(/\.record-delete\s*\{[^}]*right:\s*8px/)
+    expect(styles).toMatch(/\.record-delete\s*\{[^}]*top:\s*6px/)
+    expect(styles).toMatch(/\.record-delete\s*\{[^}]*width:\s*68px/)
+    expect(styles).toMatch(/\.record-delete\s*\{[^}]*border-radius:\s*16px/)
+    expect(styles).toMatch(/\.record-delete\s*\{[^}]*linear-gradient/)
+    // 行吸附/回弹与图标淡入淡出都走 iOS 缓动
+    expect(styles).toMatch(/\.record-swipe\s*\{[^}]*transform 0\.34s cubic-bezier\(0\.22, 0\.8, 0\.2, 1\)/)
+    expect(styles).toMatch(/\.record-delete-inner\s*\{[^}]*opacity 0\.24s cubic-bezier\(0\.32, 0\.72, 0, 1\)/)
   })
 })

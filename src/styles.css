@@ -410,26 +410,36 @@ p {
   z-index: 1;
   display: flex;
   background: var(--card);
-  transition: transform 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+  transition: transform 0.34s cubic-bezier(0.22, 0.8, 0.2, 1);
 }
 
+/* 删除位：独立圆角胶囊，四周留白，不和记录贴在一起 */
 .record-delete {
   position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
+  top: 6px;
+  right: 8px;
+  bottom: 6px;
   z-index: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 84px;
+  width: 68px;
   padding: 0;
   border: 0;
-  background: var(--danger);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #c25a42 0%, #a94a35 62%, #9c412e 100%);
+  box-shadow:
+    0 2px 6px -2px rgba(88, 33, 22, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
   color: #fff;
   font-size: 10.5px;
   font-weight: 500;
   letter-spacing: 0.02em;
+}
+
+.trash-glyph {
+  display: block;
+  filter: drop-shadow(0 1px 0.5px rgba(70, 26, 16, 0.35));
 }
 
 /* 图标随滑动距离淡入、从右侧 8px 归位并轻微放大，收起时原路淡出 */
@@ -437,9 +447,11 @@ p {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   line-height: 1;
-  transition: opacity 0.16s ease, transform 0.16s ease;
+  transition:
+    opacity 0.24s cubic-bezier(0.32, 0.72, 0, 1),
+    transform 0.24s cubic-bezier(0.32, 0.72, 0, 1);
   will-change: opacity, transform;
 }
 

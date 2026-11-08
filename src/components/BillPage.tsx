@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
-import { Receipt, Trash2 } from 'lucide-react'
+import { Receipt } from 'lucide-react'
 import type { DayGroup, RecordItem } from '../types'
 import { findCategory } from '../data/categories'
 import {
@@ -344,7 +344,24 @@ function RecordRow({
             transition: drag === null ? undefined : 'none',
           }}
         >
-          <Trash2 size={19} strokeWidth={1.9} aria-hidden="true" />
+          <svg
+            className="trash-glyph"
+            viewBox="0 0 24 24"
+            width={20}
+            height={20}
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path
+              fill="currentColor"
+              fillRule="evenodd"
+              d="M6.1 9.4h11.8a.8.8 0 0 1 .8.8l-1.1 8.8a1.6 1.6 0 0 1-1.6 1.6H8.1a1.6 1.6 0 0 1-1.6-1.6L5.3 10.2a.8.8 0 0 1 .8-.8Z
+                 M10.2 12.2a.95.95 0 0 1 .95.95v5.3a.95.95 0 0 1-1.9 0v-5.3A.95.95 0 0 1 10.2 12.2Z
+                 M13.8 12.2a.95.95 0 0 1 .95.95v5.3a.95.95 0 0 1-1.9 0v-5.3A.95.95 0 0 1 13.8 12.2Z
+                 M10.15 3.6h3.7a1 1 0 0 1 1 1v1h-5.7v-1a1 1 0 0 1 1-1Z
+                 M6 5.6h12a1.3 1.3 0 0 1 0 2.6H6a1.3 1.3 0 0 1 0-2.6Z"
+            />
+          </svg>
           <span>删除</span>
         </span>
       </button>

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
-import { Receipt } from 'lucide-react'
+import { Receipt, Trash2 } from 'lucide-react'
 import type { DayGroup, RecordItem } from '../types'
 import { findCategory } from '../data/categories'
 import {
@@ -31,6 +31,8 @@ const OPEN_THRESHOLD = 40
 const LONG_PRESS_MS = 500
 /** 位移小于它视为误触；纵向优先判断用于让页面正常滚动 */
 const CANCEL_MOVE = 8
+/** 滑到多远时垃圾桶图标完全显形，再往后只增加红底宽度 */
+const REVEAL_DISTANCE = 56
 
 interface GestureStart {
   x: number
@@ -183,6 +185,8 @@ function RecordRow({
   const suppressClick = useRef(false)
 
   const translate = drag ?? (open ? -MAX_OFFSET : 0)
+  // 0 → 收起，1 → 完全露出：垃圾桶图标随滑动淡入并从右侧轻微滑入
+  const reveal = Math.min(1, Math.max(0, -translate / REVEAL_DISTANCE))
 
   useEffect(() => {
     return () => {
@@ -326,12 +330,23 @@ function RecordRow({
         type="button"
         className="record-delete"
         aria-label={deleteLabel}
+        tabIndex={open ? 0 : -1}
         onClick={() => {
           onOpenChange(null)
           onRequestDelete(record)
         }}
       >
-        删除
+        <span
+          className="record-delete-inner"
+          style={{
+            opacity: reveal,
+            transform: `translateX(${(1 - reveal) * 8}px) scale(${0.94 + 0.06 * reveal})`,
+            transition: drag === null ? undefined : 'none',
+          }}
+        >
+          <Trash2 size={19} strokeWidth={1.9} aria-hidden="true" />
+          <span>删除</span>
+        </span>
       </button>
     </li>
   )

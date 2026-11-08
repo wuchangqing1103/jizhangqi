@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { EntrySheet } from './EntrySheet'
 
@@ -55,7 +55,7 @@ describe('记账面板：结构、分类与聚焦', () => {
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'center', behavior: 'smooth' })
   })
 
-  it('CSS 契约：三段式 flex、分类 5 列、键盘/保存键压矮、动画 30% 走完 90% 行程', () => {
+  it('CSS 契约：三段式 flex、分类 5 列、键盘/保存键压矮、进出场单段缓动', () => {
     expect(styles).toMatch(/\.entry-sheet\s*\{[^}]*display:\s*flex/)
     expect(styles).toMatch(/\.entry-sheet\s*\{[^}]*max-height:\s*92dvh/)
     expect(styles).toMatch(/\.entry-sheet\s*\{[^}]*overflow:\s*hidden/)
@@ -65,9 +65,36 @@ describe('记账面板：结构、分类与聚焦', () => {
     expect(styles).toMatch(/\.key\s*\{[^}]*height:\s*40px/)
     expect(styles).toMatch(/\.save-button\s*\{[^}]*height:\s*44px/)
 
-    // 用户指定：前 30% 走完 90% 行程，剩下 0.56 秒只走最后 10%
-    expect(styles).toMatch(/animation:\s*sheet-up 0\.8s both/)
-    expect(styles).toMatch(/30%\s*\{[^}]*translate\(-50%,\s*10\.4%\)/)
-    expect(styles).toMatch(/0%\s*\{[^}]*translate\(-50%,\s*104%\)/)
+    // 进场：一条 iOS 式曲线跑完整个行程，不再是「30% 冲 90% 再慢慢爬」
+    expect(styles).toMatch(/animation:\s*sheet-up 0\.52s cubic-bezier\(0\.32, 0\.72, 0, 1\) both/)
+    expect(styles).toMatch(/@keyframes sheet-up\s*\{[^}]*from\s*\{[^}]*translate\(-50%,\s*100%\)/)
+    expect(styles).not.toMatch(/30%\s*\{[^}]*10\.4%/)
+
+    // 退场：面板 0.24s 滑下去、遮罩 0.2s 淡出，动画结束才卸载
+    expect(styles).toMatch(/\.entry-sheet\.is-closing\s*\{[^}]*animation:\s*sheet-down 0\.24s/)
+    expect(styles).toMatch(/\.sheet-backdrop\.is-closing\s*\{[^}]*fade-out 0\.2s/)
+    expect(styles).toMatch(/\.sheet-backdrop\s*\{[^}]*fade-in 0\.28s/)
+  })
+
+  it('关闭时先播退场动画，240ms 后才通知父组件卸载，重复点只关一次', () => {
+    vi.useFakeTimers()
+    try {
+      const { sheet, onClose } = renderSheet()
+
+      fireEvent.click(screen.getByRole('button', { name: '关闭记账面板' }))
+      expect(onClose).not.toHaveBeenCalled()
+      expect(sheet).toHaveClass('is-closing')
+      expect(document.querySelector('.sheet-backdrop')).toHaveClass('is-closing')
+
+      fireEvent.click(screen.getByRole('button', { name: '关闭记账面板' }))
+      act(() => {
+        vi.advanceTimersByTime(240)
+      })
+
+      expect(onClose).toHaveBeenCalledTimes(1)
+      expect(sheet).toHaveClass('is-closing')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

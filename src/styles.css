@@ -410,7 +410,7 @@ p {
   z-index: 1;
   display: flex;
   background: var(--card);
-  transition: transform 0.18s ease;
+  transition: transform 0.22s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .record-delete {
@@ -419,14 +419,28 @@ p {
   right: 0;
   bottom: 0;
   z-index: 0;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 84px;
+  padding: 0;
+  border: 0;
   background: var(--danger);
   color: #fff;
-  font-size: 12.5px;
+  font-size: 10.5px;
   font-weight: 500;
   letter-spacing: 0.02em;
+}
+
+/* 图标随滑动距离淡入、从右侧 8px 归位并轻微放大，收起时原路淡出 */
+.record-delete-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  line-height: 1;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  will-change: opacity, transform;
 }
 
 .record-row {
@@ -791,7 +805,13 @@ p {
   z-index: 30;
   background: rgba(24, 22, 18, 0.34);
   backdrop-filter: blur(2px);
-  animation: fade-in 0.35s ease both;
+  animation: fade-in 0.28s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+/* 退场：淡出同时不再吃点击，避免关闭过程中被连点 */
+.sheet-backdrop.is-closing {
+  animation: fade-out 0.2s cubic-bezier(0.4, 0, 1, 1) both;
+  pointer-events: none;
 }
 
 .entry-sheet {
@@ -811,9 +831,15 @@ p {
   background: #fbf9f4;
   box-shadow: 0 -22px 60px -18px rgba(30, 28, 24, 0.35);
   transform: translateX(-50%);
-  /* 0.8 秒：前 30%（0.24s）走完 90% 行程，剩下 0.56 秒只走最后 10%，缓慢贴合 */
-  animation: sheet-up 0.8s both;
-  will-change: transform;
+  /* 一条 iOS 式曲线走完整个行程：起步快、尾段长，中途没有速度突变 */
+  animation: sheet-up 0.52s cubic-bezier(0.32, 0.72, 0, 1) both;
+  will-change: transform, opacity;
+}
+
+/* 退场：向下滑出，动画结束再由 App 卸载 */
+.entry-sheet.is-closing {
+  animation: sheet-down 0.24s cubic-bezier(0.4, 0, 1, 1) both;
+  pointer-events: none;
 }
 
 .sheet-grabber {
@@ -1288,22 +1314,35 @@ p {
   }
 }
 
-@keyframes sheet-up {
-  0% {
-    opacity: 0.7;
-    transform: translate(-50%, 104%);
-    animation-timing-function: cubic-bezier(0.18, 0.86, 0.24, 1);
-  }
-  30% {
+@keyframes fade-out {
+  from {
     opacity: 1;
-    transform: translate(-50%, 10.4%);
-    animation-timing-function: cubic-bezier(0.33, 0, 0.25, 1);
   }
-  62% {
-    transform: translate(-50%, 3%);
+  to {
+    opacity: 0;
   }
-  100% {
+}
+
+/* 只做一段位移 + 淡入，速度由 animation 上的单条贝塞尔决定 */
+@keyframes sheet-up {
+  from {
+    opacity: 0.6;
+    transform: translate(-50%, 100%);
+  }
+  to {
+    opacity: 1;
     transform: translate(-50%, 0);
+  }
+}
+
+@keyframes sheet-down {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  to {
+    opacity: 0.4;
+    transform: translate(-50%, 100%);
   }
 }
 

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
 import type { RecordItem } from './types'
@@ -216,7 +216,8 @@ describe('记账器 App', () => {
     expect(document.body).toHaveClass('sheet-open')
 
     await user.click(screen.getByRole('button', { name: '关闭记账面板' }))
-    expect(document.body).not.toHaveClass('sheet-open')
+    // 退场动画 240ms 后才卸载，滚动锁随之解除
+    await waitFor(() => expect(document.body).not.toHaveClass('sheet-open'))
   })
 
   it('左滑删除：二次确认后记录消失、提示出现在固定位置', async () => {

@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { CalendarDays, Delete, X } from 'lucide-react'
 import type { RecordDraft, RecordItem, RecordType } from '../types'
 import { findCategory, getCategories } from '../data/categories'
@@ -14,6 +14,8 @@ interface EntrySheetProps {
 }
 
 const KEYPAD = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0']
+/** 退场动画时长，和 styles.css 里 .entry-sheet.is-closing 的 0.24s 对齐 */
+const EXIT_MS = 240
 
 function nextAmount(current: string, key: string): string {
   if (key === 'back') return current.slice(0, -1)
@@ -38,6 +40,24 @@ export function EntrySheet({ record, onClose, onSubmit, onRequestDelete }: Entry
   const [category, setCategory] = useState(record?.category ?? 'food')
   const [date, setDate] = useState(record?.date ?? todayStr())
   const [note, setNote] = useState(record?.note ?? '')
+  // 退场：先挂上 is-closing 让面板滑下去，动画结束再让 App 卸载，避免「啪」一下消失
+  const [closing, setClosing] = useState(false)
+  const closingRef = useRef(false)
+  const closeTimer = useRef<number | null>(null)
+
+  const close = useCallback(() => {
+    if (closingRef.current) return
+    closingRef.current = true
+    setClosing(true)
+    closeTimer.current = window.setTimeout(onClose, EXIT_MS)
+  }, [onClose])
+
+  useEffect(
+    () => () => {
+      if (closeTimer.current !== null) window.clearTimeout(closeTimer.current)
+    },
+    [],
+  )
 
   const categories = getCategories(type)
   const amount = parseAmountInput(amountText) ?? 0
@@ -67,7 +87,7 @@ export function EntrySheet({ record, onClose, onSubmit, onRequestDelete }: Entry
 
       if (event.key === 'Escape') {
         event.preventDefault()
-        onClose()
+        close()
         return
       }
       if (event.key === 'Enter') {
@@ -93,20 +113,20 @@ export function EntrySheet({ record, onClose, onSubmit, onRequestDelete }: Entry
 
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [amount, category, date, note, onClose, onSubmit, type])
+  }, [amount, category, close, date, note, onSubmit, type])
 
   return (
     <>
-      <div className="sheet-backdrop" onClick={onClose} />
+      <div className={`sheet-backdrop${closing ? ' is-closing' : ''}`} onClick={close} />
       <div
-        className="entry-sheet"
+        className={`entry-sheet${closing ? ' is-closing' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={isEdit ? `编辑 ${categoryName} 记录` : '记一笔'}
       >
         <div className="sheet-grabber" aria-hidden="true" />
         <div className="sheet-header">
-          <button type="button" className="sheet-close" aria-label="关闭记账面板" onClick={onClose}>
+          <button type="button" className="sheet-close" aria-label="关闭记账面板" onClick={close}>
             <X size={16} strokeWidth={2} aria-hidden="true" />
           </button>
           <h2>{isEdit ? '编辑记录' : '记一笔'}</h2>

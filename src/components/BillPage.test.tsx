@@ -139,6 +139,30 @@ describe('账单页：左滑与长按删除', () => {
     expect(onRequestDelete).not.toHaveBeenCalled()
   })
 
+  it('删除按钮是垃圾桶图标 + 删除文案，图标随滑动淡入淡出', () => {
+    const { row } = renderBillPage()
+    const button = screen.getByRole('button', { name: '删除 餐饮 午饭' })
+    const inner = button.querySelector('.record-delete-inner') as HTMLElement
+
+    expect(inner.querySelector('svg')).not.toBeNull()
+    expect(inner.textContent).toBe('删除')
+    // 收起时完全透明，并且不进 Tab 序列
+    expect(inner.style.opacity).toBe('0')
+    expect(button).toHaveAttribute('tabindex', '-1')
+
+    fireEvent.pointerDown(row, { ...touch, clientX: 240, clientY: 300 })
+    fireEvent.pointerMove(row, { ...touch, clientX: 212, clientY: 300 })
+    // 28px / 56px → 淡入一半
+    expect(Number(inner.style.opacity)).toBeCloseTo(0.5, 5)
+
+    fireEvent.pointerMove(row, { ...touch, clientX: 150, clientY: 300 })
+    expect(inner.style.opacity).toBe('1')
+
+    fireEvent.pointerUp(row, { ...touch, clientX: 150, clientY: 300 })
+    expect(inner.style.opacity).toBe('1')
+    expect(button).toHaveAttribute('tabindex', '0')
+  })
+
   it('删掉两行冗余小字：不再有「点条目可编辑」和每日收支小计', () => {
     renderBillPage()
 

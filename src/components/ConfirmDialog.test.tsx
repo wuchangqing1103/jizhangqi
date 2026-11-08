@@ -53,15 +53,14 @@ describe('ConfirmDialog', () => {
     expect(onConfirm).toHaveBeenCalledTimes(1)
   })
 
-  it('弹层挂到 body、遮罩常驻只切透明度（CSS 契约）', () => {
+  it('弹层挂到 body、遮罩同一帧出现不掉帧（CSS 契约）', () => {
     const css = readFileSync('src/styles.css', 'utf8')
 
-    // 遮罩不能再有新特效，否则 iOS 每次打开都会重合成整页，顶部安全区闪一下
+    // 全屏层不能有任何毛玻璃或透明度过渡，否则 iOS 重合成时顶部安全区会慢一帧
     expect(css).not.toMatch(/\.modal-(scrim|layer)\s*\{[^}]*backdrop-filter/)
-    expect(css).toMatch(
-      /\.modal-scrim\s*\{[^}]*opacity:\s*0;[^}]*transition:\s*opacity 0\.28s cubic-bezier\(0\.32, 0\.72, 0, 1\)/,
-    )
-    expect(css).toMatch(/\.modal-scrim\.is-open\s*\{[^}]*opacity:\s*1;[^}]*pointer-events:\s*auto/)
+    expect(css).not.toMatch(/\.modal-scrim\s*\{[^}]*transition:\s*opacity/)
+    expect(css).toMatch(/\.modal-scrim\s*\{[^}]*visibility:\s*hidden;[^}]*pointer-events:\s*none/)
+    expect(css).toMatch(/\.modal-scrim\.is-open\s*\{[^}]*visibility:\s*visible;[^}]*pointer-events:\s*auto/)
     expect(css).toMatch(/\.modal-layer\s*\{[^}]*position:\s*fixed;[^}]*pointer-events:\s*none/)
     expect(css).toMatch(
       /\.confirm-card\s*\{[^}]*animation:\s*dialog-in 0\.34s cubic-bezier\(0\.32, 0\.72, 0, 1\)/,
@@ -70,7 +69,8 @@ describe('ConfirmDialog', () => {
     expect(css).toMatch(/@keyframes dialog-out\s*\{[\s\S]*?scale\(0\.96\) translateY\(8px\)/)
     expect(css).toMatch(/body\.modal-open\s*\{[^}]*overflow:\s*hidden/)
 
-    // 记账面板（用户认可的标杆）保持原样，仍然带毛玻璃
-    expect(css).toMatch(/\.sheet-backdrop\s*\{[^}]*backdrop-filter:\s*blur\(2px\)/)
+    // 记账面板的遮罩同样不能有毛玻璃与淡入；根部背景要和 body 同色，首帧补画才不会发白
+    expect(css).not.toMatch(/\.sheet-backdrop\s*\{[^}]*backdrop-filter/)
+    expect(css).toMatch(/html\s*\{[^}]*background-color:\s*var\(--bg\)/)
   })
 })

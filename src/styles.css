@@ -24,6 +24,8 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* 与 body 同色：iOS 在弹层出现的首帧会用根背景补画顶部安全区，不同色就会闪一条白 */
+  background-color: var(--bg);
 }
 
 body {
@@ -836,8 +838,7 @@ p {
   inset: 0;
   z-index: 30;
   background: rgba(24, 22, 18, 0.34);
-  backdrop-filter: blur(2px);
-  animation: fade-in 0.28s cubic-bezier(0.32, 0.72, 0, 1) both;
+  /* 毛玻璃与淡入都会让 iOS 单独重绘顶部安全区，闪一下；遮罩直接出现，动画交给面板本身 */
 }
 
 /* 退场：淡出，但遮罩继续拦截点击，避免 240ms 里误点到下面的按钮 */
@@ -1238,22 +1239,15 @@ p {
   inset: 0;
   z-index: 50;
   background: rgba(24, 22, 18, 0.44);
-  opacity: 0;
+  /* 不做 opacity 过渡：全屏层一旦参与合成动画，iOS 会让顶部安全区落后一帧（先亮后暗）。
+     遮罩同一帧直接出现/消失，渐入感交给卡片。visibility 保证退出后彻底不留在合成器里。 */
   visibility: hidden;
   pointer-events: none;
-  /* 淡出结束后必须彻底不给合成器留层：否则 iOS 会把顶部安全区那一帧旧颜色记住，一直是灰的 */
-  transition:
-    opacity 0.28s cubic-bezier(0.32, 0.72, 0, 1),
-    visibility 0s linear 0.28s;
 }
 
 .modal-scrim.is-open {
-  opacity: 1;
   visibility: visible;
   pointer-events: auto;
-  transition:
-    opacity 0.28s cubic-bezier(0.32, 0.72, 0, 1),
-    visibility 0s;
 }
 
 /* 卡片层：自己不吃点击，只有卡片本身可点，空白处统一落到底下的遮罩 */
@@ -1956,7 +1950,7 @@ body.modal-open {
   inset: 0;
   z-index: 60;
   background: rgba(24, 22, 18, 0.2);
-  animation: fade-in 0.22s cubic-bezier(0.32, 0.72, 0, 1) both;
+  /* 同样不做淡入：全屏层一淡入，顶部安全区就慢一帧 */
 }
 
 .composer-layer.is-closing {

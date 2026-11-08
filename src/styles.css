@@ -808,10 +808,9 @@ p {
   animation: fade-in 0.28s cubic-bezier(0.32, 0.72, 0, 1) both;
 }
 
-/* 退场：淡出同时不再吃点击，避免关闭过程中被连点 */
+/* 退场：淡出，但遮罩继续拦截点击，避免 240ms 里误点到下面的按钮 */
 .sheet-backdrop.is-closing {
   animation: fade-out 0.2s cubic-bezier(0.4, 0, 1, 1) both;
-  pointer-events: none;
 }
 
 .entry-sheet {

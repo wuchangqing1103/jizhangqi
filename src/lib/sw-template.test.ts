@@ -32,15 +32,20 @@ describe('buildServiceWorkerSource', () => {
     expect(source).toContain('if (url.origin !== self.location.origin) return')
   })
 
-  it('导航请求缓存优先，同时后台更新，断网也有页面', () => {
+  it('导航请求网络优先，断网时回退缓存', () => {
     expect(source).toContain("if (request.mode === 'navigate')")
-    expect(source).toContain('caches.match(INDEX).then((cached)')
-    expect(source).toContain('if (cached) return cached')
     expect(source).toContain('cache.put(INDEX, copy)')
-    expect(source).toContain('return network.then((response) => response || caches.match(INDEX))')
+    expect(source).toContain('.catch(() => caches.match(INDEX))')
 
-    // 缓存命中时不应该等网络：caches.match 的调用必须排在 fetch 之前
+    // 先问网络：发版后旧 index.html 引用的资源已 404，缓存优先会白屏
     const navigate = source.slice(source.indexOf("if (request.mode === 'navigate')"))
-    expect(navigate.indexOf('caches.match(INDEX)')).toBeLessThan(navigate.indexOf('fetch(request)'))
+    expect(navigate.indexOf('fetch(request')).toBeLessThan(navigate.indexOf('caches.match(INDEX)'))
+    expect(navigate).not.toContain('if (cached) return cached')
+    // 绕开 HTTP 缓存，否则刚部署的页面可能被 max-age 挡住
+    expect(navigate).toContain("cache: 'no-store'")
+  })
+
+  it('网络返回非 2xx 时不写缓存，避免把错误页烤进缓存', () => {
+    expect(source).toContain('if (response && response.ok)')
   })
 })

@@ -47,20 +47,20 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return
 
   if (request.mode === 'navigate') {
-    // 页面导航：缓存优先，先瞬间出页面；同时后台把新版本拉回来，下次打开就是最新的
+    // 页面导航：网络优先。缓存优先会在发版后先把旧 index.html 顶上来，
+    // 而旧 HTML 里引用的 assets 已经被新版本替换（旧文件 404），结果是整页白屏打不开。
+    // 网络正常时顺手把最新页面写回缓存，断网时仍能打开。
     event.respondWith(
-      caches.match(INDEX).then((cached) => {
-        const network = fetch(request)
-          .then((response) => {
+      // no-store：GitHub Pages 给 index.html 的 max-age=600，绕开 HTTP 缓存才能拿到刚部署的页面
+      fetch(request, { cache: 'no-store' })
+        .then((response) => {
+          if (response && response.ok) {
             const copy = response.clone()
             caches.open(CACHE).then((cache) => cache.put(INDEX, copy))
-            return response
-          })
-          .catch(() => undefined)
-
-        if (cached) return cached
-        return network.then((response) => response || caches.match(INDEX))
-      }),
+          }
+          return response
+        })
+        .catch(() => caches.match(INDEX)),
     )
     return
   }

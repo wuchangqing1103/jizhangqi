@@ -180,6 +180,32 @@ describe('账单页：左滑与长按删除', () => {
     expect(screen.queryByText(/^收入 ¥/)).not.toBeInTheDocument()
   })
 
+  it('滑开时记录自己也是 16px 圆角卡片：和删除胶囊同款圆角、8px 白缝', () => {
+    const { row, swipe } = renderBillPage()
+    const item = swipe.closest('li') as HTMLElement
+    expect(item).not.toHaveClass('is-swiped')
+
+    fireEvent.pointerDown(row, { ...touch, clientX: 240, clientY: 300 })
+    fireEvent.pointerMove(row, { ...touch, clientX: 60, clientY: 300 })
+    // 滑动过程中就圆角，不用等松手
+    expect(item).toHaveClass('is-swiped')
+
+    fireEvent.pointerUp(row, { ...touch, clientX: 60, clientY: 300 })
+    expect(item).toHaveClass('is-swiped')
+
+    // 手势结束后浏览器补的那一次 click 被吞掉，行保持打开
+    fireEvent.click(row)
+    expect(item).toHaveClass('is-swiped')
+
+    // 再点一次才收起，恢复方角
+    fireEvent.click(row)
+    expect(item).not.toHaveClass('is-swiped')
+
+    // 白缝 = 记录停 -84px，胶囊左缘在 -76px
+    expect(styles).toMatch(/\.record-item\.is-swiped \.record-swipe\s*\{[^}]*border-top-right-radius:\s*16px/)
+    expect(styles).toMatch(/\.record-item\.is-swiped \.record-swipe\s*\{[^}]*border-bottom-right-radius:\s*16px/)
+  })
+
   it('CSS 契约：删除位是分离的圆角胶囊，吸附用 iOS 曲线', () => {
     // 右侧留 8px、宽 68px：行停在 -84px 时，胶囊左缘离记录右缘还有 8px 空隙
     expect(styles).toMatch(/\.record-delete\s*\{[^}]*right:\s*8px/)
@@ -188,7 +214,8 @@ describe('账单页：左滑与长按删除', () => {
     expect(styles).toMatch(/\.record-delete\s*\{[^}]*border-radius:\s*16px/)
     expect(styles).toMatch(/\.record-delete\s*\{[^}]*linear-gradient/)
     // 行吸附/回弹与图标淡入淡出都走 iOS 缓动
-    expect(styles).toMatch(/\.record-swipe\s*\{[^}]*transform 0\.34s cubic-bezier\(0\.22, 0\.8, 0\.2, 1\)/)
-    expect(styles).toMatch(/\.record-delete-inner\s*\{[^}]*opacity 0\.24s cubic-bezier\(0\.32, 0\.72, 0, 1\)/)
+    expect(styles).toMatch(/\.record-swipe\s*\{[^}]*transform 0\.3s cubic-bezier\(0\.32, 0\.72, 0, 1\)/)
+    expect(styles).toMatch(/\.record-swipe\s*\{[^}]*will-change:\s*transform/)
+    expect(styles).toMatch(/\.record-delete-inner\s*\{[^}]*opacity 0\.2s cubic-bezier\(0\.32, 0\.72, 0, 1\)/)
   })
 })

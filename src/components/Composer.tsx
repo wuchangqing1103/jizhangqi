@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { modalClass, useModalClose } from '../lib/useModalClose'
 
 interface ComposerProps {
-  /** 同时用作卡片标题与输入框的无障碍名，如「备注」「新账本名」 */
+  /** 只作为卡片与输入框的无障碍名，不再显示在界面上 */
   title: string
   initialValue?: string
   placeholder?: string
@@ -34,10 +34,10 @@ export function Composer({
   const { closing, close } = useModalClose(onClose)
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
 
-  useEffect(() => {
-    // 等卡片进场的第一帧过去再聚焦，键盘弹起时卡片已经在屏幕上半部
-    const timer = window.setTimeout(() => inputRef.current?.focus(), 40)
-    return () => window.clearTimeout(timer)
+  useLayoutEffect(() => {
+    // 焦点必须在点击手势的同一个任务里落下，iOS 才会当场把键盘推起来；
+    // 放到 setTimeout 里再 focus，键盘不会弹，用户还得再点一次。
+    inputRef.current?.focus()
   }, [])
 
   function handleSubmit() {
@@ -54,6 +54,7 @@ export function Composer({
     value,
     placeholder,
     maxLength,
+    autoFocus: true,
     'aria-label': title,
     onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setValue(event.target.value)
@@ -69,30 +70,6 @@ export function Composer({
         aria-modal="true"
         aria-label={title}
       >
-        <div className="composer-head">
-          <span className="composer-title">{title}</span>
-          <button
-            type="button"
-            className="composer-action"
-            onClick={(event) => {
-              event.stopPropagation()
-              close()
-            }}
-          >
-            取消
-          </button>
-          <button
-            type="button"
-            className="composer-action primary"
-            onClick={(event) => {
-              event.stopPropagation()
-              handleSubmit()
-            }}
-          >
-            {confirmLabel}
-          </button>
-        </div>
-
         {multiline ? (
           <textarea
             {...fieldProps}
@@ -132,6 +109,15 @@ export function Composer({
             {error}
           </p>
         )}
+
+        <div className="composer-actions">
+          <button type="button" className="composer-action" onClick={close}>
+            取消
+          </button>
+          <button type="button" className="composer-action primary" onClick={handleSubmit}>
+            {confirmLabel}
+          </button>
+        </div>
       </div>
     </div>,
     document.body,

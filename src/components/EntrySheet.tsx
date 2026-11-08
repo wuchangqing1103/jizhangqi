@@ -299,7 +299,6 @@ export function EntrySheet({
         <Composer
           title="备注"
           initialValue={note}
-          placeholder="写点什么（选填）"
           multiline
           maxLength={40}
           onSubmit={(value) => {

@@ -1239,14 +1239,21 @@ p {
   z-index: 50;
   background: rgba(24, 22, 18, 0.44);
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.28s cubic-bezier(0.32, 0.72, 0, 1);
-  will-change: opacity;
+  /* 淡出结束后必须彻底不给合成器留层：否则 iOS 会把顶部安全区那一帧旧颜色记住，一直是灰的 */
+  transition:
+    opacity 0.28s cubic-bezier(0.32, 0.72, 0, 1),
+    visibility 0s linear 0.28s;
 }
 
 .modal-scrim.is-open {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
+  transition:
+    opacity 0.28s cubic-bezier(0.32, 0.72, 0, 1),
+    visibility 0s;
 }
 
 /* 卡片层：自己不吃点击，只有卡片本身可点，空白处统一落到底下的遮罩 */
@@ -1976,36 +1983,35 @@ body.modal-open {
   animation: composer-out 0.18s cubic-bezier(0.4, 0, 1, 1) both;
 }
 
-.composer-head {
+.composer-actions {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.composer-title {
-  flex: 1 1 auto;
-  min-width: 0;
-  color: var(--ink-3);
-  font-size: 13px;
-  letter-spacing: 0.02em;
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .composer-action {
-  flex: 0 0 auto;
-  padding: 6px 10px;
+  flex: 1 1 0;
+  padding: 11px 0;
   border: 0;
-  border-radius: 999px;
-  background: transparent;
+  border-radius: 12px;
+  background: #f1ece2;
   color: var(--ink-3);
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
+  transition: background 0.15s ease;
 }
 
 .composer-action.primary {
-  padding: 6px 14px;
   background: var(--ink);
   color: #f7f4ee;
+}
+
+.composer-action:active {
+  background: #e7e0d3;
+}
+
+.composer-action.primary:active {
+  background: #2f322a;
 }
 
 .composer-field {
